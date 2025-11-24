@@ -13,17 +13,16 @@ import StylingPage from './pages/build-a-wig/styling/page';
 import AddOnsPage from './pages/build-a-wig/addons/page';
 import { lazy, Suspense } from 'react';
 import LoadingScreen from './components/base/LoadingScreen';
-// Admin pages
-import AdminDashboard from './pages/admin/dashboard/page';
-import AdminBrand from './pages/admin/brand/page';
-import AdminClients from './pages/admin/clients/page';
-import AdminClientsAccount from './pages/admin/clients/account/page';
-import AdminMeetings from './pages/admin/meetings/page';
-import AdminPending from './pages/admin/pending/page';
-import AdminRevenue from './pages/admin/revenue/page';
-import AdminReviews from './pages/admin/reviews/page';
 
-// Use lazy loading for noir page like canonical backup
+// Use lazy loading for admin pages and noir page (like canonical backup)
+const AdminDashboard = lazy(() => import('./pages/admin/dashboard/page'));
+const AdminBrand = lazy(() => import('./pages/admin/brand/page'));
+const AdminClients = lazy(() => import('./pages/admin/clients/page'));
+const AdminClientsAccount = lazy(() => import('./pages/admin/clients/account/page'));
+const AdminMeetings = lazy(() => import('./pages/admin/meetings/page'));
+const AdminPending = lazy(() => import('./pages/admin/pending/page'));
+const AdminRevenue = lazy(() => import('./pages/admin/revenue/page'));
+const AdminReviews = lazy(() => import('./pages/admin/reviews/page'));
 const NoirUnitPage = lazy(() => import('./pages/build-a-wig/units/noir/page'));
 
 // Error Boundary to catch component errors
@@ -67,6 +66,18 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
+// Wrapper component to ensure BuildAWigPage only renders on correct route
+const BuildAWigPageWrapper = () => {
+  const location = useLocation();
+  
+  // Only render BuildAWigPage if we're on the exact /build-a-wig route
+  if (location.pathname !== '/build-a-wig') {
+    return null;
+  }
+  
+  return <BuildAWigPage />;
+};
+
 function App() {
   const location = useLocation();
   console.log('🔍 App.tsx rendering - Current pathname:', location.pathname);
@@ -75,7 +86,49 @@ function App() {
     <ErrorBoundary>
       <Routes>
         <Route path="/" element={<LobbyPage />} />
-        <Route path="/build-a-wig" element={<BuildAWigPage />} />
+        {/* Admin routes - placed before build-a-wig routes for proper matching */}
+        <Route path="/admin/dashboard" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminDashboard />
+          </Suspense>
+        } />
+        <Route path="/admin/brand" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminBrand />
+          </Suspense>
+        } />
+        <Route path="/admin/clients/account" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminClientsAccount />
+          </Suspense>
+        } />
+        <Route path="/admin/clients" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminClients />
+          </Suspense>
+        } />
+        <Route path="/admin/meetings" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminMeetings />
+          </Suspense>
+        } />
+        <Route path="/admin/pending" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminPending />
+          </Suspense>
+        } />
+        <Route path="/admin/revenue" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminRevenue />
+          </Suspense>
+        } />
+        <Route path="/admin/reviews" element={
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminReviews />
+          </Suspense>
+        } />
+        {/* Build-a-wig routes */}
+        <Route path="/build-a-wig" element={<BuildAWigPageWrapper />} />
         <Route path="/build-a-wig/length" element={<LengthPage />} />
         <Route path="/build-a-wig/color" element={<ColorPage />} />
         <Route path="/build-a-wig/density" element={<DensityPage />} />
@@ -90,15 +143,6 @@ function App() {
             <NoirUnitPage />
           </Suspense>
         } />
-        {/* Admin routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/brand" element={<AdminBrand />} />
-        <Route path="/admin/clients" element={<AdminClients />} />
-        <Route path="/admin/clients/account" element={<AdminClientsAccount />} />
-        <Route path="/admin/meetings" element={<AdminMeetings />} />
-        <Route path="/admin/pending" element={<AdminPending />} />
-        <Route path="/admin/revenue" element={<AdminRevenue />} />
-        <Route path="/admin/reviews" element={<AdminReviews />} />
       </Routes>
     </ErrorBoundary>
   );

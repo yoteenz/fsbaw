@@ -4,7 +4,15 @@ import { useNavigate } from 'react-router-dom';
 // Lobby Component
 const LobbyPage: React.FC = () => {
   const navigate = useNavigate();
-  console.log('✅ LobbyPage component rendering');
+  console.log('✅✅✅ LobbyPage component rendering - ROOT ROUTE');
+  
+  // Ensure we're on the root route
+  useEffect(() => {
+    console.log('✅ LobbyPage useEffect - pathname:', window.location.pathname);
+    if (window.location.pathname !== '/') {
+      console.warn('⚠️ LobbyPage rendered but pathname is not /:', window.location.pathname);
+    }
+  }, []);
 
   return (
     <div className="bg-red-900 relative" style={{ height: '100vh', overflow: 'visible', display: 'flex', flexDirection: 'column', width: '100vw', flexShrink: 0 }}>
