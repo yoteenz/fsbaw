@@ -72,6 +72,7 @@ function NoirSelection() {
   // Add to bag button states: 'idle', 'adding', 'added'
   const [addToBagState, setAddToBagState] = useState<'idle' | 'adding' | 'added'>('idle');
   const [currentConfiguration, setCurrentConfiguration] = useState<string>('');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
 
   const generateConfigurationString = () => {
@@ -122,6 +123,180 @@ function NoirSelection() {
     return `${normalizedCapSize}-${normalizedLength}-${normalizedDensity}-${normalizedLace}-${normalizedTexture}-${normalizedColor}-${normalizedHairline}-${normalizedStyling}-${normalizedAddOns}`;
   };
 
+
+  // Update existing noir cart items to use new pricing
+  useEffect(() => {
+    const updateExistingCartItems = () => {
+      // Helper functions to calculate prices from cart item data
+      const getLengthPriceFromItem = (item: any) => {
+        const length = item.length || '24"';
+        if (length === '30"' || length === '32"' || length === '34"' || length === '36"' || length === '40"') {
+          return 0; // Length surcharge is included in color price for colored items
+        }
+        return 0;
+      };
+
+      const getDensityPriceFromItem = (item: any) => {
+        const density = item.density || '200%';
+        const densityPrices: { [key: string]: number } = {
+          '150%': 0,
+          '200%': 0,
+          '250%': 50,
+          '300%': 100
+        };
+        return densityPrices[density] || 0;
+      };
+
+      const getLacePriceFromItem = (item: any) => {
+        const lace = item.lace || '13X6';
+        const lacePrices: { [key: string]: number } = {
+          '13X6': 0,
+          '13X4': 0,
+          '13X5': 0,
+          '2X6': 0,
+          '4X4': 0,
+          '5X5': 0,
+          '6X6': 0,
+          '7X7': 0,
+          'FULL LACE': 240
+        };
+        return lacePrices[lace] || 0;
+      };
+
+      const getTexturePriceFromItem = (item: any) => {
+        const texture = item.texture || 'SILKY';
+        const texturePrices: { [key: string]: number } = {
+          'SILKY': 0,
+          'WAVY': 0,
+          'CURLY': 0
+        };
+        return texturePrices[texture] || 0;
+      };
+
+      const getHairlinePriceFromItem = (item: any) => {
+        const hairline = item.hairline || 'NATURAL';
+        const hairlinePrices: { [key: string]: number } = {
+          'NATURAL': 0,
+          'PREMIUM': 20
+        };
+        return hairlinePrices[hairline] || 0;
+      };
+
+      const getStylingPriceFromItem = (item: any) => {
+        const styling = item.styling || 'NONE';
+        const stylingPrices: { [key: string]: number } = {
+          'NONE': 0,
+          'BANGS': 40,
+          'CRIMPS': 60,
+          'FLAT IRON': 60,
+          'LAYERS': 60
+        };
+        return stylingPrices[styling] || 0;
+      };
+
+      const getAddOnsPriceFromItem = (item: any) => {
+        const addOns = item.addOns || [];
+        const addOnPrices: { [key: string]: number } = {
+          'BLEACH': 40,
+          'PLUCK': 40,
+          'BLUNT CUT': 20
+        };
+        return addOns.reduce((total: number, addOn: string) => {
+          return total + (addOnPrices[addOn] || 0);
+        }, 0);
+      };
+      const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+      let updated = false;
+      
+      const updatedCartItems = cartItems.map((item: any) => {
+        if (item.name === 'NOIR') {
+          // Calculate correct price based on ALL customization options
+          let basePrice = 740; // Default for standard caps (XS, S, M, L)
+          if (item.capSize === 'XXS/XS/S' || item.capSize === 'S/M/L') {
+            basePrice = 780; // Flexible cap options cost $40 extra
+          }
+          
+          // Calculate color price from color name
+          let colorPrice = 0;
+          if (item.color && item.color !== 'OFF BLACK') {
+            const colorPrices: { [key: string]: number } = {
+              'JET BLACK': 100,
+              'ESPRESSO': 100,
+              'CHESTNUT': 100,
+              'HONEY': 100,
+              'AUBURN': 100,
+              'COPPER': 100,
+              'GINGER': 100,
+              'SANGRIA': 100,
+              'CHERRY': 100,
+              'RASPBERRY': 100,
+              'PLUM': 100,
+              'COBALT': 100,
+              'TEAL': 100,
+              'SLIME': 100,
+              'CITRINE': 100
+            };
+            colorPrice = colorPrices[item.color] || 0;
+            
+            // Add extra $40 for lengths over 30" (excluding OFF BLACK)
+            if (item.length && ['30"', '32"', '34"', '36"', '40"'].includes(item.length)) {
+              colorPrice += 40;
+            }
+          }
+          
+          // Calculate other customization prices from the cart item's stored data
+          // Don't use localStorage values as they represent the current page state, not the cart item's state
+          const lengthPrice = getLengthPriceFromItem(item);
+          const densityPrice = getDensityPriceFromItem(item);
+          const lacePrice = getLacePriceFromItem(item);
+          const texturePrice = getTexturePriceFromItem(item);
+          const hairlinePrice = getHairlinePriceFromItem(item);
+          const stylingPrice = getStylingPriceFromItem(item);
+          const addOnsPrice = getAddOnsPriceFromItem(item);
+          
+          const newPrice = basePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
+          
+          if (item.price !== newPrice) {
+            updated = true;
+            return { ...item, price: newPrice };
+          }
+        }
+        return item;
+      });
+      
+      if (updated) {
+        localStorage.setItem('cartItems', JSON.stringify(updatedCartItems));
+        // Dispatch event to update cart display
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
+        console.log('Updated existing NOIR cart items with correct pricing including all customizations');
+      }
+      
+      // Also fix localStorage capSizePrice values for flexible caps
+      const selectedCapSize = localStorage.getItem('selectedCapSize');
+      const selectedCapSizePrice = localStorage.getItem('selectedCapSizePrice');
+      if ((selectedCapSize === 'XXS/XS/S' || selectedCapSize === 'S/M/L') && selectedCapSizePrice === '40') {
+        localStorage.setItem('selectedCapSizePrice', '0');
+        console.log('Fixed selectedCapSizePrice for flexible cap');
+      }
+      
+      const customizeSelectedCapSize = localStorage.getItem('customizeSelectedCapSize');
+      const customizeSelectedCapSizePrice = localStorage.getItem('customizeSelectedCapSizePrice');
+      if ((customizeSelectedCapSize === 'XXS/XS/S' || customizeSelectedCapSize === 'S/M/L') && customizeSelectedCapSizePrice === '40') {
+        localStorage.setItem('customizeSelectedCapSizePrice', '0');
+        console.log('Fixed customizeSelectedCapSizePrice for flexible cap');
+      }
+      
+      const editSelectedCapSize = localStorage.getItem('editSelectedCapSize');
+      const editSelectedCapSizePrice = localStorage.getItem('editSelectedCapSizePrice');
+      if ((editSelectedCapSize === 'XXS/XS/S' || editSelectedCapSize === 'S/M/L') && editSelectedCapSizePrice === '40') {
+        localStorage.setItem('editSelectedCapSizePrice', '0');
+        console.log('Fixed editSelectedCapSizePrice for flexible cap');
+      }
+    };
+    
+    updateExistingCartItems();
+  }, []);
+
   // Listen for cart count changes and update button state
   useEffect(() => {
     const handleCartUpdate = () => {
@@ -168,10 +343,14 @@ function NoirSelection() {
     
     const handleCartUpdated = (event: CustomEvent) => {
       handleCartUpdate();
+      // Trigger button state check when cart is updated
+      setRefreshTrigger(prev => prev + 1);
     };
 
     const handleStorageChange = () => {
       handleCartUpdate();
+      // Trigger button state check when localStorage values change
+      setRefreshTrigger(prev => prev + 1);
     };
 
     // Listen for custom events
@@ -457,30 +636,40 @@ function NoirSelection() {
       }
     }
     setCurrentConfiguration(newConfig);
-  }, [selectedCustomCap, selectedFlexibleCap]);
+  }, [selectedCustomCap, selectedFlexibleCap, refreshTrigger]);
 
   // Initialize button state from localStorage on page load
   useEffect(() => {
-    const savedButtonState = localStorage.getItem('addToBagButtonState');
-    const lastAddedItemId = localStorage.getItem('lastAddedItemId');
     const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+    const currentConfig = generateConfigurationStringForChangeDetection();
     
-    if (savedButtonState === 'added' && lastAddedItemId) {
-      // Check if the item is still in cart
-      const itemStillInCart = cartItems.some((item: any) => item.id === lastAddedItemId);
-      if (itemStillInCart) {
-        setAddToBagState('added');
-      } else {
-        // Item was removed, clean up
-        localStorage.removeItem('addToBagButtonState');
-        localStorage.removeItem('lastAddedItemId');
-      }
+    // Always check if current configuration matches any cart item
+    const matchingItem = cartItems.find((item: any) => {
+      // Normalize cart item values to ensure consistent formatting - remove ALL spaces
+      // Handle empty addOns consistently - convert empty array to empty string
+      const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
+      const normalizedItemConfig = `${(item.capSize || '').toString().replace(/\s+/g, '')}-${(item.length || '24"').toString().replace(/\s+/g, '')}-${(item.density || '').toString().replace(/\s+/g, '')}-${(item.lace || '').toString().replace(/\s+/g, '')}-${(item.texture || '').toString().replace(/\s+/g, '')}-${(item.color || '').toString().replace(/\s+/g, '')}-${(item.hairline || '').toString().replace(/\s+/g, '')}-${(item.styling || '').toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
+      return normalizedItemConfig === currentConfig;
+    });
+    
+    if (matchingItem) {
+      setAddToBagState('added');
+      localStorage.setItem('addToBagButtonState', 'added');
+      localStorage.setItem('lastAddedItemId', matchingItem.id);
     } else {
-      // If no saved button state, check if current configuration is in cart
+      setAddToBagState('idle');
+      localStorage.removeItem('addToBagButtonState');
+      localStorage.removeItem('lastAddedItemId');
+    }
+  }, []);
+
+  // Check button state when page gains focus (user returns from other pages)
+  useEffect(() => {
+    const handleFocus = () => {
       const currentConfig = generateConfigurationStringForChangeDetection();
+      const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+      
       const matchingItem = cartItems.find((item: any) => {
-        // Normalize cart item values to ensure consistent formatting - remove ALL spaces
-        // Handle empty addOns consistently - convert empty array to empty string
         const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
         const normalizedItemConfig = `${(item.capSize || '').toString().replace(/\s+/g, '')}-${(item.length || '24"').toString().replace(/\s+/g, '')}-${(item.density || '').toString().replace(/\s+/g, '')}-${(item.lace || '').toString().replace(/\s+/g, '')}-${(item.texture || '').toString().replace(/\s+/g, '')}-${(item.color || '').toString().replace(/\s+/g, '')}-${(item.hairline || '').toString().replace(/\s+/g, '')}-${(item.styling || '').toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
         return normalizedItemConfig === currentConfig;
@@ -490,8 +679,15 @@ function NoirSelection() {
         setAddToBagState('added');
         localStorage.setItem('addToBagButtonState', 'added');
         localStorage.setItem('lastAddedItemId', matchingItem.id);
+      } else {
+        setAddToBagState('idle');
+        localStorage.removeItem('addToBagButtonState');
+        localStorage.removeItem('lastAddedItemId');
       }
-    }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const handleChartClick = () => {
@@ -760,11 +956,82 @@ function NoirSelection() {
         localStorage.setItem('selectedCapSizePrice', '0');
       }
       
-      // Create cart item with actual product details and price
+      // Calculate full price including all customizations
+      const calculateFullPrice = () => {
+        // Get cap size to determine base price
+        const capSize = localStorage.getItem('selectedCapSize') || 'M';
+        
+        // Calculate base price based on cap size
+        let basePrice = 740; // Default for standard caps (XS, S, M, L)
+        if (capSize === 'XXS/XS/S' || capSize === 'S/M/L') {
+          basePrice = 780; // Flexible cap options cost $40 extra
+        }
+        
+        // Add color price - use stored price or calculate from color name
+        let colorPrice = parseInt(localStorage.getItem('selectedColorPrice') || '0');
+        
+        // If no stored price, calculate it from the color name
+        if (colorPrice === 0) {
+          const selectedColor = localStorage.getItem('selectedColor') || 'OFF BLACK';
+          const colorPrices: { [key: string]: number } = {
+            'JET BLACK': 100,
+            'OFF BLACK': 0,
+            'ESPRESSO': 100,
+            'CHESTNUT': 100,
+            'HONEY': 100,
+            'AUBURN': 100,
+            'COPPER': 100,
+            'GINGER': 100,
+            'SANGRIA': 100,
+            'CHERRY': 100,
+            'RASPBERRY': 100,
+            'PLUM': 100,
+            'COBALT': 100,
+            'TEAL': 100,
+            'SLIME': 100,
+            'CITRINE': 100
+          };
+          colorPrice = colorPrices[selectedColor] || 0;
+          
+          // Add extra $40 for lengths over 30" (excluding OFF BLACK)
+          if (selectedColor !== 'OFF BLACK') {
+            const selectedLength = localStorage.getItem('selectedLength') || '24"';
+            const longLengths = ['30"', '32"', '34"', '36"', '40"'];
+            if (longLengths.includes(selectedLength)) {
+              colorPrice += 40;
+            }
+          }
+        }
+        
+        // Add length price
+        const lengthPrice = parseInt(localStorage.getItem('selectedLengthPrice') || '0');
+        
+        // Add density price
+        const densityPrice = parseInt(localStorage.getItem('selectedDensityPrice') || '0');
+        
+        // Add lace price
+        const lacePrice = parseInt(localStorage.getItem('selectedLacePrice') || '0');
+        
+        // Add texture price
+        const texturePrice = parseInt(localStorage.getItem('selectedTexturePrice') || '0');
+        
+        // Add hairline price
+        const hairlinePrice = parseInt(localStorage.getItem('selectedHairlinePrice') || '0');
+        
+        // Add styling price
+        const stylingPrice = parseInt(localStorage.getItem('selectedStylingPrice') || '0');
+        
+        // Add add-ons price
+        const addOnsPrice = parseInt(localStorage.getItem('selectedAddOnsPrice') || '0');
+        
+        return basePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
+      };
+      
+      // Create cart item with actual product details and full calculated price
       const cartItem = {
         id: `noir-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: 'NOIR',
-        price: 860 + parseInt(localStorage.getItem('selectedCapSizePrice') || '0'), // Base price + cap size price
+        price: calculateFullPrice(), // Use full calculated price
         quantity: quantity,
         image: '/assets/NOIR/noir-thumb.png',
         capSize: localStorage.getItem('selectedCapSize') || 'M',
@@ -806,33 +1073,249 @@ function NoirSelection() {
     }
   };
 
-  // const handleConfirmSelection = () => {
-  //   localStorage.setItem('selectedDensity', selectedDensity);
-  //   localStorage.setItem('selectedDensityPrice', getSelectedPrice().toString());
+  const handleConfirmSelection = () => {
+    localStorage.setItem('selectedDensity', selectedDensity);
+    localStorage.setItem('selectedDensityPrice', getSelectedPrice().toString());
     
-  //   // Store the selected cap size in localStorage for build-a-wig page
-  //   if (selectedCustomCap) {
-  //     localStorage.setItem('selectedCapSize', selectedCustomCap);
-  //     localStorage.setItem('selectedCapSizePrice', '0'); // Custom cap has no additional price
-  //   } else if (selectedFlexibleCap) {
-  //     localStorage.setItem('selectedCapSize', selectedFlexibleCap);
-  //     localStorage.setItem('selectedCapSizePrice', '60'); // Flexible cap has $60 additional price
-  //   }
+    // Store the selected cap size in localStorage for build-a-wig page
+    if (selectedCustomCap) {
+      localStorage.setItem('selectedCapSize', selectedCustomCap);
+      localStorage.setItem('selectedCapSizePrice', '0'); // Custom cap has no additional price
+    } else if (selectedFlexibleCap) {
+      localStorage.setItem('selectedCapSize', selectedFlexibleCap);
+      localStorage.setItem('selectedCapSizePrice', '0'); // Flexible cap extra cost is included in base price
+    }
     
-  //   navigate('/build-a-wig');
-  // };
+    navigate('/build-a-wig');
+  };
 
   const getSelectedPrice = () => {
     const selected = densityOptions.find(option => option.id === selectedDensity);
     return selected ? selected.price : 0;
   };
 
-  // Removed unused getDensityNoteText function
+  // Get dynamic density note text based on selected length and density
+  const getDensityNoteText = () => {
+    const selectedLength = localStorage.getItem('selectedLength') || '24"';
+    // Use local state instead of localStorage for live updates
+    const currentDensity = selectedDensity;
+    
+    // For 130% density, show grams based on length
+    if (currentDensity === '130%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '98',
+        '18"': '112',
+        '20"': '122',
+        '22"': '125',
+        '24"': '135',
+        '26"': '140',
+        '28"': '145',
+        '30"': '150',
+        '32"': '155',
+        '34"': '160',
+        '36"': '165',
+        '40"': '175'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '135'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For 150% density, show grams based on length
+    if (currentDensity === '150%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '113',
+        '18"': '129',
+        '20"': '142',
+        '22"': '145',
+        '24"': '155',
+        '26"': '160',
+        '28"': '165',
+        '30"': '170',
+        '32"': '175',
+        '34"': '180',
+        '36"': '185',
+        '40"': '195'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '155'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For 180% density, show grams based on length
+    if (currentDensity === '180%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '130',
+        '18"': '147',
+        '20"': '162',
+        '22"': '165',
+        '24"': '175',
+        '26"': '180',
+        '28"': '185',
+        '30"': '190',
+        '32"': '195',
+        '34"': '200',
+        '36"': '205',
+        '40"': '215'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '175'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For 250% density, show grams based on length
+    if (currentDensity === '250%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '190',
+        '18"': '217',
+        '20"': '232',
+        '22"': '245',
+        '24"': '255',
+        '26"': '264',
+        '28"': '269',
+        '30"': '274',
+        '32"': '279',
+        '34"': '284',
+        '36"': '289',
+        '40"': '297'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '255'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For 300% density, show grams based on length
+    if (currentDensity === '300%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '220',
+        '18"': '252',
+        '20"': '267',
+        '22"': '285',
+        '24"': '295',
+        '26"': '306',
+        '28"': '311',
+        '30"': '316',
+        '32"': '321',
+        '34"': '326',
+        '36"': '331',
+        '40"': '341'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '295'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For 350% density, show grams based on length
+    if (currentDensity === '350%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '250',
+        '18"': '287',
+        '20"': '302',
+        '22"': '325',
+        '24"': '335',
+        '26"': '348',
+        '28"': '353',
+        '30"': '358',
+        '32"': '363',
+        '34"': '368',
+        '36"': '373',
+        '40"': '383'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '335'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For 400% density, show grams based on length
+    if (currentDensity === '400%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '280',
+        '18"': '322',
+        '20"': '337',
+        '22"': '365',
+        '24"': '375',
+        '26"': '390',
+        '28"': '395',
+        '30"': '400',
+        '32"': '400',
+        '34"': '400',
+        '36"': '400',
+        '40"': '400'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '375'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For 200% density, show grams based on length
+    if (currentDensity === '200%') {
+      const lengthToGrams: { [key: string]: string } = {
+        '16"': '160',
+        '18"': '182',
+        '20"': '197',
+        '22"': '205',
+        '24"': '215',
+        '26"': '222',
+        '28"': '227',
+        '30"': '232',
+        '32"': '237',
+        '34"': '242',
+        '36"': '247',
+        '40"': '257'
+      };
+      
+      const grams = lengthToGrams[selectedLength] || '215'; // Default to 24" if not found
+      return (
+        <>
+          EQUIVALENT TO {grams} GRAMS.<br />
+          100 GRAMS = 1 BUNDLE, EXCLUDING LACE.
+        </>
+      );
+    }
+    
+    // For other densities, return default text
+    return 'PLEASE NOTE: EACH CUSTOM UNIT IS MADE TO ORDER. WE ENSURE ALL DETAILS ARE ACCURATE + PRECISE. EXPECT 6 - 8 WEEKS OF PROCESSING TIME FOR THIS UNIT.';
+  };
 
   const getTotalPrice = () => {
-    const basePrice = 860;
+    const basePrice = 740;
     const densityPrice = getSelectedPrice();
-    const flexibleCapPrice = selectedFlexibleCap ? 60 : 0;
+    const flexibleCapPrice = selectedFlexibleCap ? 40 : 0;
     
     // If flexible cap is selected, use base price + flexible cap price
     if (selectedFlexibleCap) {
@@ -903,7 +1386,7 @@ function NoirSelection() {
             <button 
               onClick={handleBack} 
               className="cursor-pointer"
-              style={{ height: '15px', width: '21px', padding: '0', border: 'none', background: 'none' }}
+              style={{ height: '15px !important', width: '21px !important', padding: '0 !important', border: 'none !important', background: 'none !important' }}
             >
               <img
                 alt="Back"
@@ -1526,26 +2009,26 @@ function NoirSelection() {
             <p
               className="text-center text-black mb-2 noir-product-name"
               style={{ 
-                fontFamily: '"Covered By Your Grace", cursive',
-                fontSize: '50px',
-                fontWeight: '400',
-                lineHeight: '1.2',
-                margin: '0',
-                padding: '0',
-                display: 'block',
-                textAlign: 'center' as const,
-                height: 'auto',
-                maxHeight: 'none',
-                width: '100%',
-                minWidth: 'auto',
-                maxWidth: 'none',
-                overflow: 'visible',
-                whiteSpace: 'nowrap',
-                position: 'relative' as const,
-                zIndex: '999',
-                transform: 'translateY(-8px)',
-                scale: '1',
-                zoom: '1'
+                fontFamily: '"Covered By Your Grace", cursive !important',
+                fontSize: '50px !important',
+                fontWeight: '400 !important',
+                lineHeight: '1.2 !important',
+                margin: '0 !important',
+                padding: '0 !important',
+                display: 'block !important',
+                textAlign: 'center !important',
+                height: 'auto !important',
+                maxHeight: 'none !important',
+                width: '100% !important',
+                minWidth: 'auto !important',
+                maxWidth: 'none !important',
+                overflow: 'visible !important',
+                whiteSpace: 'nowrap !important',
+                position: 'relative !important',
+                zIndex: '999 !important',
+                transform: 'translateY(-8px) !important',
+                scale: '1 !important',
+                zoom: '1 !important'
               }}
             >
               NOIR
@@ -1618,7 +2101,7 @@ function NoirSelection() {
                 transform: 'translateY(-34px)'
               }}
             >
-              OR 4 PAYMENTS OF <span dangerouslySetInnerHTML={formatPrice(selectedFlexibleCap ? 230 : selectedCustomCap ? 215 : 240)} /> WITH <span style={{ fontWeight: '600', color: '#EB1C24' }}>KLARNA</span>
+              OR 4 PAYMENTS OF <span dangerouslySetInnerHTML={formatPrice(selectedFlexibleCap ? 195 : selectedCustomCap ? Math.ceil(getTotalPrice() / 4) : 185)} /> WITH <span style={{ fontWeight: '600', color: '#EB1C24' }}>KLARNA</span>
             </p>
           </div>
 
@@ -1743,11 +2226,11 @@ function NoirSelection() {
                   paddingRight: '8px',
                   fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif',
                   fontWeight: '500',
-                  width: '108px',
-                  minWidth: '108px',
-                  maxWidth: '108px',
+                  width: '108px !important',
+                  minWidth: '108px !important',
+                  maxWidth: '108px !important',
                   fontSize: '11px',
-                  boxSizing: 'border-box' as const,
+                  boxSizing: 'border-box !important',
                   backgroundColor: selectedFlexibleCap === 'XXS/XS/S' ? 'white' : 'white',
                   color: selectedFlexibleCap === 'XXS/XS/S' ? '#EB1C24' : 'black',
                   cursor: 'pointer',
@@ -1770,11 +2253,11 @@ function NoirSelection() {
                   paddingRight: '8px',
                   fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif',
                   fontWeight: '500',
-                  width: '108px',
-                  minWidth: '108px',
-                  maxWidth: '108px',
+                  width: '108px !important',
+                  minWidth: '108px !important',
+                  maxWidth: '108px !important',
                   fontSize: '11px',
-                  boxSizing: 'border-box' as const,
+                  boxSizing: 'border-box !important',
                   backgroundColor: selectedFlexibleCap === 'S/M/L' ? 'white' : 'white',
                   color: selectedFlexibleCap === 'S/M/L' ? '#EB1C24' : 'black',
                   cursor: 'pointer',
@@ -1996,7 +2479,7 @@ function NoirSelection() {
                     <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
                       USE 3D WIG GENERATOR TO CUSTOMIZE UNIT TO YOUR DESIRABILITY, FOR MEMBERS ONLY.
                     </p>
-                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap', marginBottom: '-8px' }}>
                       PROPER VERIFICATION IS REQUIRED TO FINALIZE THE PURCHASE OF ALL UNITS.
                     </p>
                   </>
@@ -2013,7 +2496,7 @@ function NoirSelection() {
                     <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
                       CUSTOM COLOR, STYLING & ADD-ONS ARE NOT APPLICABLE FOR RUSH PROCESSING.
                     </p>
-                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap', marginBottom: '-8px' }}>
                       PROCESSING TIME DOES NOT INCLUDE WEEKENDS AND MAJOR US HOLIDAYS.
                     </p>
                   </>
@@ -2027,7 +2510,7 @@ function NoirSelection() {
                     <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
                       WHEN APPLICABLE, WE DO OFFER STORE CREDIT TO GO TOWARDS A FUTURE PURCHASE.
                     </p>
-                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap', marginBottom: '-8px' }}>
                       IF THERE IS AN ISSUE WITH YOUR ORDER, REACH OUT TO CONTACT@FRONTALSLAYER.COM
                     </p>
                   </>
@@ -2041,14 +2524,14 @@ function NoirSelection() {
                     <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
                       ROUTINELY BRUSH HAIR WITH A PADDLE BRUSH TO AVOID MATTING & SHEDDING.
                     </p>
-                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontSize: '7.7px', color: 'black', whiteSpace: 'nowrap', marginBottom: '-8px' }}>
                       CAREFULLY STORE UNIT INSIDE SATIN LINED DUST BAG TO MINIMIZE DAMAGE, FRIZZ + DEBRIS.
                     </p>
                   </>
                 )}
                 
                 {activeTab === 'REVIEWS' && (
-                  <div style={{ textAlign: 'center', padding: '20px 0', transform: 'translateY(-12px)' }}>
+                  <div style={{ textAlign: 'center', padding: '20px 0 0px 0', transform: 'translateY(-12px)' }}>
                     {/* Leave a Review Section */}
                     <div style={{ marginBottom: '40px' }}>
                       <h3 style={{ 
@@ -2451,15 +2934,43 @@ function NoirSelection() {
         <div className="px-0 md:px-0" style={{ marginTop: '10px' }}>
           <button
             onClick={() => {
-              // Store the selected cap size in localStorage for build-a-wig page
+              // Store ONLY the selected cap size in localStorage for customize page
               if (selectedCustomCap) {
-                localStorage.setItem('selectedCapSize', selectedCustomCap);
-                localStorage.setItem('selectedCapSizePrice', '0'); // Custom cap has no additional price
+                localStorage.setItem('customizeSelectedCapSize', selectedCustomCap);
+                localStorage.setItem('customizeSelectedCapSizePrice', '0'); // Custom cap has no additional price
               } else if (selectedFlexibleCap) {
-                localStorage.setItem('selectedCapSize', selectedFlexibleCap);
-                localStorage.setItem('selectedCapSizePrice', '60'); // Flexible cap has $60 additional price
+                localStorage.setItem('customizeSelectedCapSize', selectedFlexibleCap);
+                localStorage.setItem('customizeSelectedCapSizePrice', '0'); // Flexible cap extra cost is included in base price
               }
-              navigate('/build-a-wig');
+              
+              // Clear any existing editing state and sub-page selections - customize button always starts fresh
+              localStorage.removeItem('customizeEditingCartItem');
+              localStorage.removeItem('customizeEditingCartItemId');
+              
+              // Clear all sub-page selections to ensure fresh start with defaults
+              localStorage.removeItem('customizeSelectedLength');
+              localStorage.removeItem('customizeSelectedDensity');
+              localStorage.removeItem('customizeSelectedLace');
+              localStorage.removeItem('customizeSelectedTexture');
+              localStorage.removeItem('customizeSelectedColor');
+              localStorage.removeItem('customizeSelectedHairline');
+              localStorage.removeItem('customizeSelectedStyling');
+              localStorage.removeItem('customizeSelectedAddOns');
+              localStorage.removeItem('customizeSelectedHairStyling');
+              localStorage.removeItem('customizeSelectedPartSelection');
+              
+              // Clear all sub-page prices
+              localStorage.removeItem('customizeSelectedLengthPrice');
+              localStorage.removeItem('customizeSelectedDensityPrice');
+              localStorage.removeItem('customizeSelectedLacePrice');
+              localStorage.removeItem('customizeSelectedTexturePrice');
+              localStorage.removeItem('customizeSelectedColorPrice');
+              localStorage.removeItem('customizeSelectedHairlinePrice');
+              localStorage.removeItem('customizeSelectedStylingPrice');
+              localStorage.removeItem('customizeSelectedAddOnsPrice');
+              console.log('Customize page - Starting fresh customization');
+              
+              navigate('/build-a-wig/noir/customize');
             }}
             className="border border-black font-futura w-full max-w-m text-center py-2 text-[11px] font-semibold bg-white cursor-pointer hover:bg-gray-50"
             style={{ 
@@ -2618,7 +3129,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $960 USD
+                    $820 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
@@ -2683,7 +3194,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $880 USD
+                    $760 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
@@ -2748,7 +3259,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $860 USD
+                    $740 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
@@ -2813,7 +3324,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $920 USD
+                    $780 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
@@ -3009,7 +3520,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $880 USD
+                    $760 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
@@ -3074,7 +3585,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $920 USD
+                    $780 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
@@ -3139,7 +3650,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $860 USD
+                    $740 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
@@ -3204,7 +3715,7 @@ function NoirSelection() {
                     fontWeight: '500',
                     lineHeight: '0.84'
                   }}>
-                    $960 USD
+                    $820 USD
                   </p>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', marginTop: '2px' }}>
                     {[...Array(5)].map((_, index) => (
