@@ -1372,6 +1372,16 @@ function NoirSelection() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Defensive check for required variables
+  if (!currentImages || !current3DImages) {
+    console.error('Missing image data:', { currentImages, current3DImages });
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       {showLoading && <LoadingScreen />}
