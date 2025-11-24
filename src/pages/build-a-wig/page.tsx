@@ -22,6 +22,7 @@ export default function BuildAWigPage() {
   const [showLoading, setShowLoading] = useState(true);
   
   // Track the current route to detect navigation changes
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [routeKey, setRouteKey] = useState(location.pathname);
   
   // ALWAYS use default values for build-a-wig/noir page - never check editingCartItem
@@ -70,6 +71,7 @@ export default function BuildAWigPage() {
 
   const [basePrice] = useState(740);
   const [totalPrice, setTotalPrice] = useState(740);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Ref to track if we're currently loading from localStorage (to prevent sync effect from overwriting)
@@ -474,6 +476,7 @@ export default function BuildAWigPage() {
     return `${customization.capSize}-${customization.length}-${customization.density}-${customization.color}-${customization.texture}-${customization.lace}-${customization.hairline}-${customization.styling}-${JSON.stringify(customization.addOns || [])}`;
   };
 
+  // @ts-expect-error - Function kept for potential future use
   const _forceResetButtonState = () => {
     console.log('Main - RESET BUTTON CLICKED!');
     console.log('Main - Before reset:', {
@@ -493,6 +496,7 @@ export default function BuildAWigPage() {
 
   // Helper functions to get correct icons based on selections
   const getCapSizeIcon = () => {
+    // @ts-expect-error - Variable kept for potential future use
     const _selectedCapSize = customization.capSize || 'M';
     return '/assets/cap size-icon.svg'; // All cap sizes use the same icon
   };
@@ -548,6 +552,7 @@ export default function BuildAWigPage() {
     return '/assets/Texture-icon.svg'; // All textures use the same icon
   };
 
+  // @ts-expect-error - Function kept for potential future use
   const _getColorIcon = () => {
     return '/assets/none-icon.svg'; // Color uses a custom color circle, not an icon
   };

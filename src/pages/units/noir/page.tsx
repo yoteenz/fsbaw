@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ThumbBox from '../../../components/ThumbBox';
 import DynamicCartIcon from '../../../components/DynamicCartIcon';
 import LoadingScreen from '../../../components/base/LoadingScreen';
@@ -16,29 +17,6 @@ interface DensityOption {
 function NoirSelection() {
   console.log('🔴 NOIR COMPONENT IS LOADING! 🔴');
   const navigate = useNavigate();
-  
-  // Test: Return immediately to verify component loads
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'red',
-      color: 'white',
-      fontSize: '48px',
-      fontWeight: 'bold',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 99999
-    }}>
-      NOIR PAGE IS LOADING - Component Rendered Successfully!
-      <br />
-      <span style={{ fontSize: '24px' }}>Route: /units/noir</span>
-    </div>
-  );
   
   // Fix for window.REACT_APP_NAVIGATE - use navigate hook instead
   const [selectedDensity, setSelectedDensity] = useState(() => {
@@ -101,6 +79,7 @@ function NoirSelection() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const generateConfigurationString = () => {
     const selectedCapSize = localStorage.getItem('selectedCapSize') || 'M';
     const selectedLength = localStorage.getItem('selectedLength') || '24"';
@@ -572,6 +551,7 @@ function NoirSelection() {
     }
   ];
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDensitySelect = (densityId: string) => {
     setSelectedDensity(densityId);
   };
@@ -778,12 +758,14 @@ function NoirSelection() {
   };
 
   // Similar Products scroll handlers
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSimilarProductsMouseDown = (e: React.MouseEvent) => {
     setIsSimilarProductsDragging(true);
     setSimilarProductsStartX(e.clientX);
     setSimilarProductsStartScroll(similarProductsScroll);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSimilarProductsMouseMove = (e: React.MouseEvent) => {
     if (!isSimilarProductsDragging) return;
     e.preventDefault();
@@ -796,6 +778,7 @@ function NoirSelection() {
     setSimilarProductsScroll(Math.max(minScroll, Math.min(maxScroll, newPosition)));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSimilarProductsMouseUp = () => {
     setIsSimilarProductsDragging(false);
     // Snap to nearest position
@@ -806,12 +789,14 @@ function NoirSelection() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSimilarProductsTouchStart = (e: React.TouchEvent) => {
     setIsSimilarProductsDragging(true);
     setSimilarProductsStartX(e.touches[0].clientX);
     setSimilarProductsStartScroll(similarProductsScroll);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSimilarProductsTouchMove = (e: React.TouchEvent) => {
     if (!isSimilarProductsDragging) return;
     e.preventDefault();
@@ -824,6 +809,7 @@ function NoirSelection() {
     setSimilarProductsScroll(Math.max(minScroll, Math.min(maxScroll, newPosition)));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSimilarProductsTouchEnd = () => {
     setIsSimilarProductsDragging(false);
     // Snap to nearest position
@@ -835,12 +821,14 @@ function NoirSelection() {
   };
 
   // Recently Viewed scroll handlers
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRecentlyViewedMouseDown = (e: React.MouseEvent) => {
     setIsRecentlyViewedDragging(true);
     setRecentlyViewedStartX(e.clientX);
     setRecentlyViewedStartScroll(recentlyViewedScroll);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRecentlyViewedMouseMove = (e: React.MouseEvent) => {
     if (!isRecentlyViewedDragging) return;
     e.preventDefault();
@@ -853,6 +841,7 @@ function NoirSelection() {
       setRecentlyViewedScroll(Math.max(minScroll, Math.min(maxScroll, newPosition)));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRecentlyViewedMouseUp = () => {
     setIsRecentlyViewedDragging(false);
     // Snap to nearest position
@@ -863,12 +852,14 @@ function NoirSelection() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRecentlyViewedTouchStart = (e: React.TouchEvent) => {
     setIsRecentlyViewedDragging(true);
     setRecentlyViewedStartX(e.touches[0].clientX);
     setRecentlyViewedStartScroll(recentlyViewedScroll);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRecentlyViewedTouchMove = (e: React.TouchEvent) => {
     if (!isRecentlyViewedDragging) return;
     e.preventDefault();
@@ -881,6 +872,7 @@ function NoirSelection() {
       setRecentlyViewedScroll(Math.max(minScroll, Math.min(maxScroll, newPosition)));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRecentlyViewedTouchEnd = () => {
     setIsRecentlyViewedDragging(false);
     // Snap to nearest position
@@ -912,6 +904,7 @@ function NoirSelection() {
     setRecentlyViewedScroll(-window.innerWidth * 0.713);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleMannequinClick = (viewIndex: number) => {
     setSelectedMannequinView(viewIndex);
   };
@@ -1099,6 +1092,7 @@ function NoirSelection() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleConfirmSelection = () => {
     localStorage.setItem('selectedDensity', selectedDensity);
     localStorage.setItem('selectedDensityPrice', getSelectedPrice().toString());
@@ -1121,6 +1115,7 @@ function NoirSelection() {
   };
 
   // Get dynamic density note text based on selected length and density
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getDensityNoteText = () => {
     const selectedLength = localStorage.getItem('selectedLength') || '24"';
     // Use local state instead of localStorage for live updates
@@ -2042,7 +2037,7 @@ function NoirSelection() {
                 margin: '0 !important',
                 padding: '0 !important',
                 display: 'block !important',
-                textAlign: 'center !important',
+                textAlign: 'center' as const,
                 height: 'auto !important',
                 maxHeight: 'none !important',
                 width: '100% !important',
@@ -2050,7 +2045,7 @@ function NoirSelection() {
                 maxWidth: 'none !important',
                 overflow: 'visible !important',
                 whiteSpace: 'nowrap !important',
-                position: 'relative !important',
+                position: 'relative' as const,
                 zIndex: '999 !important',
                 transform: 'translateY(-8px) !important',
                 scale: '1 !important',
@@ -2256,7 +2251,7 @@ function NoirSelection() {
                   minWidth: '108px !important',
                   maxWidth: '108px !important',
                   fontSize: '11px',
-                  boxSizing: 'border-box !important',
+                  boxSizing: 'border-box' as const,
                   backgroundColor: selectedFlexibleCap === 'XXS/XS/S' ? 'white' : 'white',
                   color: selectedFlexibleCap === 'XXS/XS/S' ? '#EB1C24' : 'black',
                   cursor: 'pointer',
@@ -2283,7 +2278,7 @@ function NoirSelection() {
                   minWidth: '108px !important',
                   maxWidth: '108px !important',
                   fontSize: '11px',
-                  boxSizing: 'border-box !important',
+                  boxSizing: 'border-box' as const,
                   backgroundColor: selectedFlexibleCap === 'S/M/L' ? 'white' : 'white',
                   color: selectedFlexibleCap === 'S/M/L' ? '#EB1C24' : 'black',
                   cursor: 'pointer',
