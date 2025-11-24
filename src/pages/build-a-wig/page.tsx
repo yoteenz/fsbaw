@@ -98,17 +98,6 @@ export default function BuildAWigPage() {
 
   const [basePrice] = useState(740);
   const [totalPrice, setTotalPrice] = useState(740);
-  const [priceBreakdown, setPriceBreakdown] = useState({
-    capSizePrice: 0,
-    colorPrice: 0,
-    lengthPrice: 0,
-    densityPrice: 0,
-    lacePrice: 0,
-    texturePrice: 0,
-    hairlinePrice: 0,
-    stylingPrice: 0,
-    addOnsPrice: 0
-  });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
@@ -140,16 +129,16 @@ export default function BuildAWigPage() {
         isLoadingFromStorage.current = true;
         
         // Load selections from localStorage FIRST (sub-pages save here before navigating)
-        const savedCapSize = localStorage.getItem('selectedCapSize');
-        const savedLength = localStorage.getItem('selectedLength');
-        const savedDensity = localStorage.getItem('selectedDensity');
-        const savedLace = localStorage.getItem('selectedLace');
-        const savedTexture = localStorage.getItem('selectedTexture');
-        const savedColor = localStorage.getItem('selectedColor');
-        const savedHairline = localStorage.getItem('selectedHairline');
-        const savedStyling = localStorage.getItem('selectedStyling');
-        const savedAddOns = localStorage.getItem('selectedAddOns');
-        
+      const savedCapSize = localStorage.getItem('selectedCapSize');
+      const savedLength = localStorage.getItem('selectedLength');
+      const savedDensity = localStorage.getItem('selectedDensity');
+      const savedLace = localStorage.getItem('selectedLace');
+      const savedTexture = localStorage.getItem('selectedTexture');
+      const savedColor = localStorage.getItem('selectedColor');
+      const savedHairline = localStorage.getItem('selectedHairline');
+      const savedStyling = localStorage.getItem('selectedStyling');
+      const savedAddOns = localStorage.getItem('selectedAddOns');
+      
         // Check if current selections match defaults (initial load scenario)
         const defaults = {
           capSize: 'M',
@@ -355,7 +344,7 @@ export default function BuildAWigPage() {
           }
           
           return {
-            ...prev,
+          ...prev,
             capSize: savedCapSize !== null ? savedCapSize : prev.capSize,
             length: savedLength !== null ? savedLength : prev.length,
             density: savedDensity !== null ? savedDensity : prev.density,
@@ -364,7 +353,7 @@ export default function BuildAWigPage() {
             color: savedColor !== null ? savedColor : prev.color,
             hairline: savedHairline !== null ? savedHairline : prev.hairline,
             styling: validStyling,
-            addOns: savedAddOns ? JSON.parse(savedAddOns) : prev.addOns,
+          addOns: savedAddOns ? JSON.parse(savedAddOns) : prev.addOns,
           };
         });
         
@@ -377,7 +366,7 @@ export default function BuildAWigPage() {
       console.log('Main page - customStorageChange event received');
       // Use setTimeout to ensure this runs after any navigation completes
       setTimeout(() => {
-        handleStorageChange();
+      handleStorageChange();
       }, 0);
     };
     
@@ -953,15 +942,15 @@ export default function BuildAWigPage() {
       localStorage.removeItem('selectedStylingPrice');
       localStorage.removeItem('selectedAddOnsPrice');
       
-      localStorage.setItem('selectedCapSizePrice', '0');
-      localStorage.setItem('selectedColorPrice', '0');
-      localStorage.setItem('selectedLengthPrice', '0');
-      localStorage.setItem('selectedDensityPrice', '0');
-      localStorage.setItem('selectedLacePrice', '0');
-      localStorage.setItem('selectedTexturePrice', '0');
-      localStorage.setItem('selectedHairlinePrice', '0');
-      localStorage.setItem('selectedStylingPrice', '0');
-      localStorage.setItem('selectedAddOnsPrice', '0');
+    localStorage.setItem('selectedCapSizePrice', '0');
+    localStorage.setItem('selectedColorPrice', '0');
+    localStorage.setItem('selectedLengthPrice', '0');
+    localStorage.setItem('selectedDensityPrice', '0');
+    localStorage.setItem('selectedLacePrice', '0');
+    localStorage.setItem('selectedTexturePrice', '0');
+    localStorage.setItem('selectedHairlinePrice', '0');
+    localStorage.setItem('selectedStylingPrice', '0');
+    localStorage.setItem('selectedAddOnsPrice', '0');
     } else {
       // If prices don't exist, initialize them to 0
       // But first remove them to ensure clean state
@@ -1019,38 +1008,10 @@ export default function BuildAWigPage() {
       const stylingPrice = parseFloat(localStorage.getItem('selectedStylingPrice') || '0');
       const addOnsPrice = parseFloat(localStorage.getItem('selectedAddOnsPrice') || '0');
       
-      // Store individual prices for debug display
-      (window as any).priceDebug = {
-        basePrice,
-        capSizePrice,
-        colorPrice,
-        lengthPrice,
-        densityPrice,
-        lacePrice,
-        texturePrice,
-        hairlinePrice,
-        stylingPrice,
-        addOnsPrice,
-        total: basePrice + capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice
-      };
-      
       // Add all the actual prices
       total += capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
       
       setTotalPrice(total);
-      
-      // Store breakdown for debug display
-      setPriceBreakdown({
-        capSizePrice,
-        colorPrice,
-        lengthPrice,
-        densityPrice,
-        lacePrice,
-        texturePrice,
-        hairlinePrice,
-        stylingPrice,
-        addOnsPrice
-      });
     };
 
     // Calculate price immediately and on changes
@@ -2124,32 +2085,6 @@ export default function BuildAWigPage() {
                   style={{ fontFamily: '"Futura PT Medium", Futura, Inter, sans-serif', fontWeight: '500' }}
                   dangerouslySetInnerHTML={formatPrice(totalPrice)}
               />
-              
-              {/* DEBUG PRICE BREAKDOWN - MOBILE ONLY */}
-              <div style={{
-                marginTop: '10px',
-                padding: '10px',
-                backgroundColor: '#f0f0f0',
-                borderRadius: '5px',
-                fontSize: '10px',
-                textAlign: 'left',
-                fontFamily: 'monospace'
-              }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>PRICE DEBUG:</div>
-                <div>Base: ${basePrice}</div>
-                <div>Cap: ${priceBreakdown.capSizePrice}</div>
-                <div>Color: ${priceBreakdown.colorPrice}</div>
-                <div>Length: ${priceBreakdown.lengthPrice}</div>
-                <div>Density: ${priceBreakdown.densityPrice}</div>
-                <div>Lace: ${priceBreakdown.lacePrice}</div>
-                <div>Texture: ${priceBreakdown.texturePrice}</div>
-                <div>Hairline: ${priceBreakdown.hairlinePrice}</div>
-                <div>Styling: ${priceBreakdown.stylingPrice}</div>
-                <div>AddOns: ${priceBreakdown.addOnsPrice}</div>
-                <div style={{ fontWeight: 'bold', marginTop: '5px', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
-                  TOTAL: ${totalPrice}
-                </div>
-              </div>
             </div>
           </div>
         </div>

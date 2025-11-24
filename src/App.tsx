@@ -11,7 +11,8 @@ import CapSizePage from './pages/build-a-wig/cap-size/page';
 import StylingPage from './pages/build-a-wig/styling/page';
 import AddOnsPage from './pages/build-a-wig/addons/page';
 // import LoadingScreen from './components/base/LoadingScreen';
-import NoirUnitPage from './pages/build-a-wig/units/noir/page';
+// import NoirUnitPage from './pages/build-a-wig/units/noir/page';
+import TestNoirPage from './pages/build-a-wig/units/noir/test-page';
 
 // Use lazy loading for noir page like canonical backup
 // const NoirUnitPage = lazy(() => import('./pages/build-a-wig/units/noir/page'));
@@ -135,7 +136,7 @@ function App() {
               
               {/* Render the component */}
               <ErrorBoundary>
-                <NoirUnitPage />
+                <TestNoirPage />
               </ErrorBoundary>
             </div>
           } />
