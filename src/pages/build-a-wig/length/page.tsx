@@ -17,9 +17,11 @@ interface LengthOption {
 function LengthSelection() {
   const navigate = useNavigate();
   const [selectedLength, setSelectedLength] = useState(() => {
-    return localStorage.getItem('selectedLength') || '24"';
+    // Always start with default - useEffect will load from localStorage
+    // This matches the customize pages pattern
+    return '24"';
   });
-  const [selectedView, setSelectedView] = useState(1);
+  const [selectedView, setSelectedView] = useState(1); // Changed from 0 to 1 (middle image)
   const [showLoading, setShowLoading] = useState(true);
   
   // Mobile menu state
@@ -56,6 +58,7 @@ function LengthSelection() {
   }, []);
 
   useEffect(() => {
+    // Hide loading screen after 2 seconds
     const timer = setTimeout(() => {
       setShowLoading(false);
     }, 2000);
@@ -65,15 +68,57 @@ function LengthSelection() {
 
   // Initialize with current selection from localStorage
   useEffect(() => {
-    const currentLength = localStorage.getItem('selectedLength');
-    if (currentLength) {
-      setSelectedLength(currentLength);
+    // CRITICAL: Check if we're ACTUALLY editing (not just stale edit data)
+    // Only load from editingCartItem if we're on the edit route
+    const isOnEditRoute = window.location.pathname.includes('/edit');
+    const editingCartItem = localStorage.getItem('editingCartItem');
+    
+    // If we're editing, load from edit data
+    if (isOnEditRoute && editingCartItem) {
+      try {
+        const item = JSON.parse(editingCartItem);
+        console.log('Length page - loading edit mode length:', item.length);
+        if (item.length) {
+          setSelectedLength(item.length);
+          localStorage.setItem('selectedLength', item.length);
+          return; // Exit early - we're done
+        }
+      } catch (error) {
+        console.error('Length page - Error parsing editingCartItem:', error);
+      }
     }
     
+    // NOT editing - load from main page's selectedLength
+    // CRITICAL: Clear any stale edit data first
+    if (!isOnEditRoute && editingCartItem) {
+      console.log('Length page - NOT editing, clearing stale edit data');
+      // Don't clear editingCartItem (edit page needs it), but ensure we use selectedLength
+    }
+    
+    const currentLength = localStorage.getItem('selectedLength');
+    console.log('Length page - useEffect loading from localStorage:', currentLength, 'isOnEditRoute:', isOnEditRoute);
+    
+    // Always use localStorage value if it exists (should match main page)
+    if (currentLength) {
+      console.log('Length page - Setting length from localStorage:', currentLength);
+      setSelectedLength(currentLength);
+    } else {
+      // If not in localStorage, use default and save it
+      console.log('Length page - No value in localStorage, using default 24"');
+      const defaultLength = '24"';
+      setSelectedLength(defaultLength);
+      localStorage.setItem('selectedLength', defaultLength);
+    }
+    
+    // Also listen for customStorageChange event in case main page updates after mount
     const handleCustomStorageChange = () => {
-      const currentLength = localStorage.getItem('selectedLength');
-      if (currentLength) {
-        setSelectedLength(currentLength);
+      // Only update if NOT editing
+      if (!window.location.pathname.includes('/edit')) {
+        const currentLength = localStorage.getItem('selectedLength');
+        if (currentLength) {
+          console.log('Length page - Updated from customStorageChange:', currentLength);
+          setSelectedLength(currentLength);
+        }
       }
     };
     
@@ -87,6 +132,7 @@ function LengthSelection() {
   // Listen for storage changes to update selection
   useEffect(() => {
     const handleStorageChange = () => {
+      // Update length from localStorage
       const currentLength = localStorage.getItem('selectedLength');
       if (currentLength) {
         setSelectedLength(currentLength);
@@ -120,6 +166,7 @@ function LengthSelection() {
         '/assets/lagos right.png'
       ];
     } else {
+      // Default to natural images
       return [
         '/assets/natural left.png',
         '/assets/natural front.png',
@@ -130,14 +177,14 @@ function LengthSelection() {
 
   const wigViews = getWigViews();
 
-  // Length options
+  // Length options - Updated with proper pricing (24" is default, included in base price)
   const lengthOptions: LengthOption[] = [
     {
       id: '16"',
       name: '16"',
       inches: '16"',
       description: 'Shoulder length',
-      price: -50,
+      price: -50, // Less than default, discount
       image: '/assets/back length-icon.svg'
     },
     {
@@ -145,7 +192,7 @@ function LengthSelection() {
       name: '18"',
       inches: '18"',
       description: 'Mid-back length',
-      price: -25,
+      price: -25, // Less than default, discount
       image: '/assets/back length-icon.svg'
     },
     {
@@ -153,7 +200,7 @@ function LengthSelection() {
       name: '20"',
       inches: '20"',
       description: 'Mid-back length',
-      price: -10,
+      price: -10, // Slightly less than default
       image: '/assets/back length-icon.svg'
     },
     {
@@ -161,7 +208,7 @@ function LengthSelection() {
       name: '22"',
       inches: '22"',
       description: 'Long length',
-      price: -5,
+      price: -5, // Slightly less than default
       image: '/assets/back length-icon.svg'
     },
     {
@@ -169,64 +216,64 @@ function LengthSelection() {
       name: '24"',
       inches: '24"',
       description: 'Long length',
-      price: 0,
-      image: '/assets/b length thumb.png'
+      price: 0, // Default option - included in base price
+      image: '/assets/butt length-icon.png'
     },
     {
       id: '26"',
       name: '26"',
       inches: '26"',
       description: 'Very long length',
-      price: 50,
-      image: '/assets/b length thumb.png'
+      price: 50, // Additional cost for longer than default
+      image: '/assets/butt length-icon.png'
     },
     {
       id: '28"',
       name: '28"',
       inches: '28"',
       description: 'Extra long length',
-      price: 100,
-      image: '/assets/b length thumb.png'
+      price: 100, // Additional cost for longer than default
+      image: '/assets/butt length-icon.png'
     },
     {
       id: '30"',
       name: '30"',
       inches: '30"',
       description: 'Super long length',
-      price: 150,
-      image: '/assets/b length thumb.png'
+      price: 150, // Additional cost for longer than default
+      image: '/assets/butt length-icon.png'
     },
     {
       id: '32"',
       name: '32"',
       inches: '32"',
       description: 'Super long length',
-      price: 200,
-      image: '/assets/thigh length thumb.png'
+      price: 200, // Additional cost for longer than default
+      image: '/assets/thigh length-icon.svg'
     },
     {
       id: '34"',
       name: '34"',
       inches: '34"',
       description: 'Ultra long length',
-      price: 250,
-      image: '/assets/thigh length thumb.png'
+      price: 250, // Additional cost for longer than default
+      image: '/assets/thigh length-icon.svg'
     },
     {
       id: '36"',
       name: '36"',
       inches: '36"',
       description: 'Ultra long length',
-      price: 300,
-      image: '/assets/thigh length thumb.png'
+      price: 300, // Additional cost for longer than default
+      image: '/assets/thigh length-icon.svg'
     },
     {
       id: '40"',
       name: '40"',
       inches: '40"',
       description: 'Maximum length',
-      price: 400,
-      image: '/assets/thigh length thumb.png'
+      price: 400, // Additional cost for longest option
+      image: '/assets/thigh length-icon.svg'
     }
   ];
 
@@ -267,6 +314,7 @@ function LengthSelection() {
     localStorage.setItem('selectedLength', selectedLength);
     localStorage.setItem('selectedLengthPrice', getSelectedPrice().toString());
     
+    // Dispatch custom event to notify main page of changes
     window.dispatchEvent(new CustomEvent('customStorageChange'));
     
     navigate('/build-a-wig');
@@ -281,6 +329,7 @@ function LengthSelection() {
   const getLengthNoteText = () => {
     const currentLength = selectedLength;
     
+    // For lengths 30" and above, show additional processing time message
     if (['30"', '32"', '34"', '36"', '40"'].includes(currentLength)) {
       return (
         <>
@@ -290,6 +339,7 @@ function LengthSelection() {
       );
     }
     
+    // For lengths 16" to 28", show standard processing time message
     return (
       <>
         3D MODEL IS FOR VISUAL PURPOSES ONLY.<br />
@@ -328,7 +378,7 @@ function LengthSelection() {
             style={{ border: '1.3px solid black' }}
           >
           <div className="flex gap-5 absolute left-4">
-        <button
+            <button 
               onClick={handleBack} 
               className="cursor-pointer"
               style={{ height: '15px !important', width: '21px !important', padding: '0 !important', border: 'none !important', background: 'none !important' }}
@@ -352,7 +402,7 @@ function LengthSelection() {
             <p className="text-sm" style={{ fontFamily: '"Futura PT Book", futuristic-pt, Futura, Inter, sans-serif' }}>
               <span 
                 style={{ fontFamily: '"Futura PT Book", futuristic-pt, Futura, Inter, sans-serif', fontWeight: '400', cursor: 'pointer' }}
-          onClick={() => navigate('/build-a-wig')}
+                onClick={() => navigate('/build-a-wig')}
               >
                 BUILD-A-WIG {'>'}{' '}
               </span>
@@ -468,6 +518,10 @@ function LengthSelection() {
 
             </div>
 
+            {/* Back Button */}
+            <div className="flex justify-start ml-[calc(50%-131px)]">
+            </div>
+
             {/* SELECTION AREA */}
             <div className="w-full flex flex-col lg:mt-0 mt-0">
               {/* LENGTH SELECTION HEADER */}
@@ -478,9 +532,9 @@ function LengthSelection() {
               HAIR MEASUREMENTS
             </p>
 
-            {/* LENGTH OPTIONS */}
+            {/* LENGTH OPTIONS - Updated to fit 4 containers per row with centered layout */}
             <div className="grid grid-cols-4 gap-3 mx-auto justify-center mb-6 max-w-[320px]" style={{ marginTop: '15px' }}>
-              {/* Row 1: 16", 18", 20", 22" */}
+              {/* Row 1: 16", 18", 20", 22" - 50% top position */}
               {lengthOptions.slice(0, 4).map((option) => (
                 <ThumbBox
                   key={option.id}
@@ -494,7 +548,7 @@ function LengthSelection() {
                   topPosition="50%"
                 />
               ))}
-              {/* Row 2: 24", 26", 28", 30" */}
+              {/* Row 2: 24", 26", 28", 30" - 58% top position */}
               {lengthOptions.slice(4, 8).map((option) => (
                 <ThumbBox
                   key={option.id}
@@ -508,7 +562,7 @@ function LengthSelection() {
                   topPosition="calc(58% - 1px)"
                 />
               ))}
-              {/* Row 3: 32", 34", 36", 40" */}
+              {/* Row 3: 32", 34", 36", 40" - 58% top position */}
               {lengthOptions.slice(8, 12).map((option) => (
                 <ThumbBox
                   key={option.id}
@@ -715,7 +769,7 @@ function LengthSelection() {
                   }}
                 >
                   BRAND
-              </button>
+                </button>
               </div>
 
               {/* Menu Items */}
@@ -750,6 +804,7 @@ function LengthSelection() {
                       </div>
                     ))
                   ) : (
+                    // SHOP tab with dropdown functionality
                     [
                       { label: 'UNITS', hasArrow: true, isExpandable: true, subItems: ['STRAIGHT', 'WAVY', 'CURLY'] },
                       { label: 'BOOKING', hasArrow: true, isExpandable: true, subItems: ['APPOINTMENT', 'CONSULTATION'] },
