@@ -1372,47 +1372,13 @@ function NoirSelection() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // DEBUG: Add visible debugging colors
-  console.log('NoirSelection render - showLoading:', showLoading);
-  console.log('NoirSelection render - currentImages:', currentImages);
-  console.log('NoirSelection render - current3DImages:', current3DImages);
-
   return (
     <>
-      {/* DEBUG: Bright red banner at top to see if component renders */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        height: '120px',
-        backgroundColor: 'red', 
-        zIndex: 99999,
-        padding: '20px',
-        color: 'white',
-        fontSize: '32px',
-        fontWeight: 'bold',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        border: '5px solid yellow',
-        boxShadow: '0 0 20px black'
-      }}>
-        🔴 DEBUG: NoirSelection Component IS RENDERING! 🔴
-        <br />
-        <span style={{ fontSize: '18px' }}>
-          showLoading: {String(showLoading)} | Images: {String(!!currentImages)} | 3D: {String(!!current3DImages)}
-        </span>
-      </div>
-      
       {showLoading && <LoadingScreen />}
       
       
       <div className="min-h-screen" style={{
-        position: 'relative',
-        backgroundColor: 'yellow', // DEBUG: Yellow background
-        marginTop: '120px' // Space for debug banner
+        position: 'relative'
       }}>
         {/* Fixed Background Layer */}
         <div 
@@ -1422,26 +1388,24 @@ function NoirSelection() {
             backgroundSize: 'cover',
             backgroundPosition: 'center calc(50% + 25px)',
             backgroundRepeat: 'no-repeat',
-            backgroundAttachment: 'fixed',
-            backgroundColor: 'blue' // DEBUG: Blue fallback
+            backgroundAttachment: 'fixed'
           }}
         ></div>
         
         {/* Scrollable Content */}
-        <div className="relative z-10" style={{ backgroundColor: 'green' }}> {/* DEBUG: Green background */}
+        <div className="relative z-10">
           {/* MAIN CONTENT */}
-          <div className="flex flex-col py-5 px-4" style={{ minWidth: '100%', maxWidth: 'none', overflow: 'visible', backgroundColor: 'orange' }}> {/* DEBUG: Orange background */}
+          <div className="flex flex-col py-5 px-4" style={{ minWidth: '100%', maxWidth: 'none', overflow: 'visible' }}>
         {/* HEADER */}
         <div
           className="border-solid border-black flex justify-center items-center py-3 w-full mb-5 px-5 bg-white/60 backdrop-blur-sm relative"
-          style={{ border: '1.3px solid black', backgroundColor: 'purple' }} // DEBUG: Purple background
+          style={{ border: '1.3px solid black' }}
         >
-          {/* DEBUG: Cyan background for button area */}
-          <div className="flex gap-5 absolute left-4" style={{ backgroundColor: 'cyan' }}>
+          <div className="flex gap-5 absolute left-4">
             <button 
               onClick={handleBack} 
               className="cursor-pointer"
-              style={{ height: '15px !important', width: '21px !important', padding: '0 !important', border: 'none !important', background: 'magenta !important' }}
+              style={{ height: '15px !important', width: '21px !important', padding: '0 !important', border: 'none !important', background: 'none !important' }}
             >
               <img
                 alt="Back"
