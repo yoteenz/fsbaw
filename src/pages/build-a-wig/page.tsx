@@ -745,7 +745,7 @@ export default function BuildAWigPage() {
 
   // Listen for storage changes to update in real-time (debounced for performance)
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     
     const handleStorageChange = () => {
       // Skip if in edit mode - let edit mode handle its own sync
