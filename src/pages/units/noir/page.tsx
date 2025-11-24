@@ -14,7 +14,31 @@ interface DensityOption {
 }
 
 function NoirSelection() {
+  console.log('🔴 NOIR COMPONENT IS LOADING! 🔴');
   const navigate = useNavigate();
+  
+  // Test: Return immediately to verify component loads
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'red',
+      color: 'white',
+      fontSize: '48px',
+      fontWeight: 'bold',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 99999
+    }}>
+      NOIR PAGE IS LOADING - Component Rendered Successfully!
+      <br />
+      <span style={{ fontSize: '24px' }}>Route: /units/noir</span>
+    </div>
+  );
   
   // Fix for window.REACT_APP_NAVIGATE - use navigate hook instead
   const [selectedDensity, setSelectedDensity] = useState(() => {
