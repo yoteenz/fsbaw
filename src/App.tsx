@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Component, ErrorInfo, ReactNode } from 'react';
 import LobbyPage from './pages/lobby/page';
 import BuildAWigPage from './pages/build-a-wig/page';
@@ -59,6 +59,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function App() {
+  const location = useLocation();
+  console.log('🔍 App.tsx rendering - Current pathname:', location.pathname);
+  
   return (
     <ErrorBoundary>
       <Routes>

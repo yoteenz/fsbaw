@@ -105,7 +105,8 @@ export default function BuildAWigPage() {
   // This MUST run FIRST and synchronously before any other useEffects
   useEffect(() => {
     // Check if we're on the build-a-wig page (not a sub-page)
-    const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
+    // NOTE: Removed check for '/' since root path now goes to lobby page
+    const isMainPage = location.pathname === '/build-a-wig';
     
     // Update route key to track navigation
     if (location.pathname !== routeKey) {
@@ -230,7 +231,8 @@ export default function BuildAWigPage() {
   // Also force defaults on mount if not editing - runs AFTER route change effect
   useEffect(() => {
     // Check if we're on the main page
-    const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
+    // NOTE: Removed check for '/' since root path now goes to lobby page
+    const isMainPage = location.pathname === '/build-a-wig';
     
     if (isMainPage) {
       // CRITICAL: Only clear if NOT editing - editing state should persist
@@ -307,7 +309,8 @@ export default function BuildAWigPage() {
   // Listen for storage changes (when sub-pages update localStorage)
   useEffect(() => {
     const handleStorageChange = () => {
-      const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
+      // NOTE: Removed check for '/' since root path now goes to lobby page
+      const isMainPage = location.pathname === '/build-a-wig';
       
       if (isMainPage) {
         const savedCapSize = localStorage.getItem('selectedCapSize');
@@ -371,7 +374,8 @@ export default function BuildAWigPage() {
     
     // Also check on focus in case we missed an event
     const handleFocus = () => {
-      const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
+      // NOTE: Removed check for '/' since root path now goes to lobby page
+      const isMainPage = location.pathname === '/build-a-wig';
       if (isMainPage) {
         handleStorageChange();
       }

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 // Lobby Component
 const LobbyPage: React.FC = () => {
   const navigate = useNavigate();
+  console.log('✅ LobbyPage component rendering');
 
   return (
     <div className="bg-red-900 relative" style={{ height: '100vh', overflow: 'visible', display: 'flex', flexDirection: 'column', width: '100vw', flexShrink: 0 }}>
@@ -138,6 +139,7 @@ const LoungePage: React.FC = () => {
 
 // Main Lobby App Component with Slide Transition
 const LobbyApp: React.FC = () => {
+  console.log('🎯 LOBBY PAGE LOADING - This should show when visiting root path');
   const [currentPage, setCurrentPage] = useState<number>(0); // 0 = Lobby, 1 = Lounge
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
 
