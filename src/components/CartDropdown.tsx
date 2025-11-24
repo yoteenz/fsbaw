@@ -124,9 +124,9 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   useEffect(() => {
     const loadCartItems = () => {
       try {
-        const storedItems = localStorage.getItem('cartItems');
+    const storedItems = localStorage.getItem('cartItems');
         console.log('CartDropdown - Loading cart items from localStorage:', storedItems);
-        if (storedItems) {
+    if (storedItems) {
           const items = JSON.parse(storedItems);
           console.log('CartDropdown - Parsed cart items:', items);
           
@@ -262,6 +262,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
 
   // Helper function to get cap size price based on cap size name
   // Note: These helper functions are kept for potential future edit functionality
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getCapSizePrice = (_capSize: string) => {
     // All cap sizes (including flexible) have their extra cost included in base price
     // So capSizePrice should always be 0
@@ -292,6 +293,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get length price based on length
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getLengthPrice = (length: string) => {
     if (!length) return 0;
     const lengthNum = parseInt(length.replace('"', ''));
@@ -300,6 +302,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get density price based on density
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getDensityPrice = (density: string) => {
     const densityPrices: { [key: string]: number } = {
       '130%': -60,
@@ -315,6 +318,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get lace price based on lace type
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getLacePrice = (lace: string) => {
     const lacePrices: { [key: string]: number } = {
       '13X6': 0,    // Default, no additional cost
@@ -365,6 +369,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get texture price based on texture
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getTexturePrice = (texture: string) => {
     const texturePrices: { [key: string]: number } = {
       'SILKY': 0,
@@ -375,6 +380,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get hairline price based on hairline
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getHairlinePrice = (hairline: string) => {
     if (!hairline) return 0;
     const hairlineArray = hairline.split(',');
@@ -399,6 +405,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get styling price based on styling
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getStylingPrice = (styling: string) => {
     if (!styling || styling === 'NONE') return 0;
     
@@ -430,6 +437,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get add-ons price based on add-ons array
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getAddOnsPrice = (addOns: string[]) => {
     if (!addOns || addOns.length === 0) return 0;
     
