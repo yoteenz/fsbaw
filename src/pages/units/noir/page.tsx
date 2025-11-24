@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ThumbBox from '../../../../components/ThumbBox';
-import DynamicCartIcon from '../../../../components/DynamicCartIcon';
-import LoadingScreen from '../../../../components/base/LoadingScreen';
+import ThumbBox from '../../../components/ThumbBox';
+import DynamicCartIcon from '../../../components/DynamicCartIcon';
+import LoadingScreen from '../../../components/base/LoadingScreen';
 
 interface DensityOption {
   id: string;
