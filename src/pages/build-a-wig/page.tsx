@@ -18,6 +18,11 @@ interface WigCustomization {
 export default function BuildAWigPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  
+  const addDebugLog = (message: string) => {
+    setDebugInfo(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
   const [selectedView, setSelectedView] = useState(1);
   const [showLoading, setShowLoading] = useState(true);
   
@@ -25,11 +30,11 @@ export default function BuildAWigPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [routeKey, setRouteKey] = useState(location.pathname);
   
-  // ALWAYS use default values for build-a-wig/noir page - never check editingCartItem
+  // ALWAYS use default values for build-a-wig page - never check editingCartItem
   // Editing is handled separately by the noir/edit page, not this page
   const [customization, setCustomization] = useState<WigCustomization>(() => {
-    // Clear localStorage synchronously BEFORE setting initial state
-    // This ensures defaults are always shown
+    // Clear ALL localStorage items synchronously BEFORE setting initial state
+    // This ensures defaults are always shown and no stale data persists
     localStorage.removeItem('selectedCapSize');
     localStorage.removeItem('selectedLength');
     localStorage.removeItem('selectedDensity');
@@ -41,6 +46,17 @@ export default function BuildAWigPage() {
     localStorage.removeItem('selectedStyling');
     localStorage.removeItem('selectedAddOns');
     localStorage.removeItem('selectedHairStyling');
+    
+    // CRITICAL: Remove ALL price items FIRST to clear any stale values
+    localStorage.removeItem('selectedCapSizePrice');
+    localStorage.removeItem('selectedColorPrice');
+    localStorage.removeItem('selectedLengthPrice');
+    localStorage.removeItem('selectedDensityPrice');
+    localStorage.removeItem('selectedLacePrice');
+    localStorage.removeItem('selectedTexturePrice');
+    localStorage.removeItem('selectedHairlinePrice');
+    localStorage.removeItem('selectedStylingPrice');
+    localStorage.removeItem('selectedAddOnsPrice');
     
     // Set defaults in localStorage so sub-pages can read them
     const defaults = {
@@ -65,6 +81,17 @@ export default function BuildAWigPage() {
     localStorage.setItem('selectedStyling', defaults.styling);
     localStorage.setItem('selectedAddOns', JSON.stringify(defaults.addOns));
     
+    // Set all default prices to 0 synchronously AFTER removing old values
+    localStorage.setItem('selectedCapSizePrice', '0');
+    localStorage.setItem('selectedColorPrice', '0');
+    localStorage.setItem('selectedLengthPrice', '0');
+    localStorage.setItem('selectedDensityPrice', '0');
+    localStorage.setItem('selectedLacePrice', '0');
+    localStorage.setItem('selectedTexturePrice', '0');
+    localStorage.setItem('selectedHairlinePrice', '0');
+    localStorage.setItem('selectedStylingPrice', '0');
+    localStorage.setItem('selectedAddOnsPrice', '0');
+    
     // ALWAYS return defaults - never load from localStorage
     return defaults;
   });
@@ -83,7 +110,7 @@ export default function BuildAWigPage() {
   // This MUST run FIRST and synchronously before any other useEffects
   useEffect(() => {
     // Check if we're on the build-a-wig page (not a sub-page)
-    const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/build-a-wig/noir' || location.pathname === '/';
+    const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
     
     // Update route key to track navigation
     if (location.pathname !== routeKey) {
@@ -136,17 +163,31 @@ export default function BuildAWigPage() {
           (savedStyling === null || savedStyling === defaults.styling) &&
           (!savedAddOns || JSON.parse(savedAddOns).length === 0);
         
-        // If all selections are defaults, reset all prices to 0
+        // CRITICAL: Remove ALL price items FIRST to clear any stale values
+        // Then set them to 0 to ensure clean state
+        localStorage.removeItem('selectedCapSizePrice');
+        localStorage.removeItem('selectedColorPrice');
+        localStorage.removeItem('selectedLengthPrice');
+        localStorage.removeItem('selectedDensityPrice');
+        localStorage.removeItem('selectedLacePrice');
+        localStorage.removeItem('selectedTexturePrice');
+        localStorage.removeItem('selectedHairlinePrice');
+        localStorage.removeItem('selectedStylingPrice');
+        localStorage.removeItem('selectedAddOnsPrice');
+        
+        // Now set all prices to 0
+        localStorage.setItem('selectedCapSizePrice', '0');
+        localStorage.setItem('selectedColorPrice', '0');
+        localStorage.setItem('selectedLengthPrice', '0');
+        localStorage.setItem('selectedDensityPrice', '0');
+        localStorage.setItem('selectedLacePrice', '0');
+        localStorage.setItem('selectedTexturePrice', '0');
+        localStorage.setItem('selectedHairlinePrice', '0');
+        localStorage.setItem('selectedStylingPrice', '0');
+        localStorage.setItem('selectedAddOnsPrice', '0');
+        
         if (isDefaultSelection) {
-          localStorage.setItem('selectedCapSizePrice', '0');
-          localStorage.setItem('selectedColorPrice', '0');
-          localStorage.setItem('selectedLengthPrice', '0');
-          localStorage.setItem('selectedDensityPrice', '0');
-          localStorage.setItem('selectedLacePrice', '0');
-          localStorage.setItem('selectedTexturePrice', '0');
-          localStorage.setItem('selectedHairlinePrice', '0');
-          localStorage.setItem('selectedStylingPrice', '0');
-          localStorage.setItem('selectedAddOnsPrice', '0');
+          console.log('Main page - Reset all prices to 0 for defaults');
         }
         
         console.log('Main page - Route change, loading from localStorage:', {
@@ -194,7 +235,7 @@ export default function BuildAWigPage() {
   // Also force defaults on mount if not editing - runs AFTER route change effect
   useEffect(() => {
     // Check if we're on the main page
-    const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/build-a-wig/noir' || location.pathname === '/';
+    const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
     
     if (isMainPage) {
       // CRITICAL: Only clear if NOT editing - editing state should persist
@@ -228,6 +269,17 @@ export default function BuildAWigPage() {
           addOns: [],
         };
         
+        // CRITICAL: Remove ALL price items FIRST to clear any stale values
+        localStorage.removeItem('selectedCapSizePrice');
+        localStorage.removeItem('selectedColorPrice');
+        localStorage.removeItem('selectedLengthPrice');
+        localStorage.removeItem('selectedDensityPrice');
+        localStorage.removeItem('selectedLacePrice');
+        localStorage.removeItem('selectedTexturePrice');
+        localStorage.removeItem('selectedHairlinePrice');
+        localStorage.removeItem('selectedStylingPrice');
+        localStorage.removeItem('selectedAddOnsPrice');
+        
         localStorage.setItem('selectedCapSize', defaults.capSize);
         localStorage.setItem('selectedLength', defaults.length);
         localStorage.setItem('selectedDensity', defaults.density);
@@ -237,6 +289,17 @@ export default function BuildAWigPage() {
         localStorage.setItem('selectedHairline', defaults.hairline);
         localStorage.setItem('selectedStyling', defaults.styling);
         localStorage.setItem('selectedAddOns', JSON.stringify(defaults.addOns));
+        
+        // Now set all prices to 0 AFTER removing old values
+        localStorage.setItem('selectedCapSizePrice', '0');
+        localStorage.setItem('selectedColorPrice', '0');
+        localStorage.setItem('selectedLengthPrice', '0');
+        localStorage.setItem('selectedDensityPrice', '0');
+        localStorage.setItem('selectedLacePrice', '0');
+        localStorage.setItem('selectedTexturePrice', '0');
+        localStorage.setItem('selectedHairlinePrice', '0');
+        localStorage.setItem('selectedStylingPrice', '0');
+        localStorage.setItem('selectedAddOnsPrice', '0');
         
         // Force defaults IMMEDIATELY
         setCustomization(defaults);
@@ -249,7 +312,7 @@ export default function BuildAWigPage() {
   // Listen for storage changes (when sub-pages update localStorage)
   useEffect(() => {
     const handleStorageChange = () => {
-      const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/build-a-wig/noir' || location.pathname === '/';
+      const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
       
       if (isMainPage) {
         const savedCapSize = localStorage.getItem('selectedCapSize');
@@ -313,7 +376,7 @@ export default function BuildAWigPage() {
     
     // Also check on focus in case we missed an event
     const handleFocus = () => {
-      const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/build-a-wig/noir' || location.pathname === '/';
+      const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
       if (isMainPage) {
         handleStorageChange();
       }
@@ -830,39 +893,105 @@ export default function BuildAWigPage() {
   // REMOVED: Storage change listener - this page never syncs from localStorage
   // Editing is handled by noir/edit page, not this page
 
-  // Initialize default price values only if they don't exist
-  // This preserves existing selections while ensuring defaults are available
+  // Initialize default price values and reset them if defaults are selected
   useEffect(() => {
-    // Only set default prices if they don't already exist in localStorage
-    // This preserves existing selections while ensuring defaults are available
-    if (!localStorage.getItem('selectedCapSizePrice')) {
+    // Check if current selections match defaults
+    const defaults = {
+      capSize: 'M',
+      length: '24"',
+      density: '200%',
+      lace: '13X6',
+      texture: 'SILKY',
+      color: 'OFF BLACK',
+      hairline: 'NATURAL',
+      styling: 'NONE',
+      addOns: [],
+    };
+    
+    const savedCapSize = localStorage.getItem('selectedCapSize');
+    const savedLength = localStorage.getItem('selectedLength');
+    const savedDensity = localStorage.getItem('selectedDensity');
+    const savedLace = localStorage.getItem('selectedLace');
+    const savedTexture = localStorage.getItem('selectedTexture');
+    const savedColor = localStorage.getItem('selectedColor');
+    const savedHairline = localStorage.getItem('selectedHairline');
+    const savedStyling = localStorage.getItem('selectedStyling');
+    const savedAddOns = localStorage.getItem('selectedAddOns');
+    
+    const isDefaultSelection = 
+      (!savedCapSize || savedCapSize === defaults.capSize) &&
+      (!savedLength || savedLength === defaults.length) &&
+      (!savedDensity || savedDensity === defaults.density) &&
+      (!savedLace || savedLace === defaults.lace) &&
+      (!savedTexture || savedTexture === defaults.texture) &&
+      (!savedColor || savedColor === defaults.color) &&
+      (!savedHairline || savedHairline === defaults.hairline) &&
+      (!savedStyling || savedStyling === defaults.styling) &&
+      (!savedAddOns || JSON.parse(savedAddOns || '[]').length === 0);
+    
+    // If defaults are selected, ALWAYS reset all prices to 0
+    // Remove items first to clear any stale values, then set to 0
+    if (isDefaultSelection) {
+      localStorage.removeItem('selectedCapSizePrice');
+      localStorage.removeItem('selectedColorPrice');
+      localStorage.removeItem('selectedLengthPrice');
+      localStorage.removeItem('selectedDensityPrice');
+      localStorage.removeItem('selectedLacePrice');
+      localStorage.removeItem('selectedTexturePrice');
+      localStorage.removeItem('selectedHairlinePrice');
+      localStorage.removeItem('selectedStylingPrice');
+      localStorage.removeItem('selectedAddOnsPrice');
+      
       localStorage.setItem('selectedCapSizePrice', '0');
-    }
-    if (!localStorage.getItem('selectedColorPrice')) {
       localStorage.setItem('selectedColorPrice', '0');
-    }
-    if (!localStorage.getItem('selectedLengthPrice')) {
       localStorage.setItem('selectedLengthPrice', '0');
-    }
-    if (!localStorage.getItem('selectedDensityPrice')) {
       localStorage.setItem('selectedDensityPrice', '0');
-    }
-    if (!localStorage.getItem('selectedLacePrice')) {
       localStorage.setItem('selectedLacePrice', '0');
-    }
-    if (!localStorage.getItem('selectedTexturePrice')) {
       localStorage.setItem('selectedTexturePrice', '0');
-    }
-    if (!localStorage.getItem('selectedHairlinePrice')) {
       localStorage.setItem('selectedHairlinePrice', '0');
-    }
-    if (!localStorage.getItem('selectedStylingPrice')) {
       localStorage.setItem('selectedStylingPrice', '0');
-    }
-    if (!localStorage.getItem('selectedAddOnsPrice')) {
       localStorage.setItem('selectedAddOnsPrice', '0');
+    } else {
+      // If prices don't exist, initialize them to 0
+      // But first remove them to ensure clean state
+      if (!localStorage.getItem('selectedCapSizePrice')) {
+        localStorage.removeItem('selectedCapSizePrice');
+        localStorage.setItem('selectedCapSizePrice', '0');
+      }
+      if (!localStorage.getItem('selectedColorPrice')) {
+        localStorage.removeItem('selectedColorPrice');
+        localStorage.setItem('selectedColorPrice', '0');
+      }
+      if (!localStorage.getItem('selectedLengthPrice')) {
+        localStorage.removeItem('selectedLengthPrice');
+        localStorage.setItem('selectedLengthPrice', '0');
+      }
+      if (!localStorage.getItem('selectedDensityPrice')) {
+        localStorage.removeItem('selectedDensityPrice');
+        localStorage.setItem('selectedDensityPrice', '0');
+      }
+      if (!localStorage.getItem('selectedLacePrice')) {
+        localStorage.removeItem('selectedLacePrice');
+        localStorage.setItem('selectedLacePrice', '0');
+      }
+      if (!localStorage.getItem('selectedTexturePrice')) {
+        localStorage.removeItem('selectedTexturePrice');
+        localStorage.setItem('selectedTexturePrice', '0');
+      }
+      if (!localStorage.getItem('selectedHairlinePrice')) {
+        localStorage.removeItem('selectedHairlinePrice');
+        localStorage.setItem('selectedHairlinePrice', '0');
+      }
+      if (!localStorage.getItem('selectedStylingPrice')) {
+        localStorage.removeItem('selectedStylingPrice');
+        localStorage.setItem('selectedStylingPrice', '0');
+      }
+      if (!localStorage.getItem('selectedAddOnsPrice')) {
+        localStorage.removeItem('selectedAddOnsPrice');
+        localStorage.setItem('selectedAddOnsPrice', '0');
+      }
     }
-  }, []);
+  }, [customization]);
 
   useEffect(() => {
     const calculatePrice = () => {
@@ -879,16 +1008,43 @@ export default function BuildAWigPage() {
       const stylingPrice = parseFloat(localStorage.getItem('selectedStylingPrice') || '0');
       const addOnsPrice = parseFloat(localStorage.getItem('selectedAddOnsPrice') || '0');
       
+      // Debug logging to identify which price is wrong
+      console.log('Price calculation:', {
+        basePrice,
+        capSizePrice,
+        colorPrice,
+        lengthPrice,
+        densityPrice,
+        lacePrice,
+        texturePrice,
+        hairlinePrice,
+        stylingPrice,
+        addOnsPrice,
+        total: basePrice + capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice
+      });
+      
       // Add all the actual prices
       total += capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
       
       setTotalPrice(total);
     };
 
-    // Debounce price calculation to prevent excessive updates
-    const timeoutId = setTimeout(calculatePrice, 100);
-    return () => clearTimeout(timeoutId);
-  }, [customization, basePrice]);
+    // Calculate price immediately and on changes
+    calculatePrice();
+    
+    // Also listen for storage changes to recalculate price
+    const handleStorageChange = () => {
+      calculatePrice();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('customStorageChange', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('customStorageChange', handleStorageChange);
+    };
+  }, [customization, basePrice, refreshTrigger]);
 
   // Load selected currency from localStorage
   useEffect(() => {
@@ -1305,6 +1461,30 @@ export default function BuildAWigPage() {
                 />
               </button>
             </div>
+            
+            {/* DEBUG PANEL - Visible on screen */}
+            {debugInfo.length > 0 && (
+              <div style={{
+                position: 'fixed',
+                top: '10px',
+                right: '10px',
+                background: 'rgba(0,0,0,0.8)',
+                color: 'white',
+                padding: '10px',
+                borderRadius: '5px',
+                fontSize: '12px',
+                zIndex: 99999,
+                maxWidth: '300px',
+                maxHeight: '200px',
+                overflow: 'auto'
+              }}>
+                <div style={{fontWeight: 'bold', marginBottom: '5px'}}>Debug Log:</div>
+                {debugInfo.map((log, i) => (
+                  <div key={i} style={{marginBottom: '3px'}}>{log}</div>
+                ))}
+              </div>
+            )}
+            
             <p className="text-sm" style={{ fontFamily: '"Futura PT Book", futuristic-pt, Futura, Inter, sans-serif' }}>
               <span 
                 style={{ fontFamily: '"Futura PT Book", futuristic-pt, Futura, Inter, sans-serif', fontWeight: '400', cursor: 'pointer' }}
@@ -1314,7 +1494,15 @@ export default function BuildAWigPage() {
               </span>{' '}
               <span
                 style={{ color: '#EB1C24', fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif', fontWeight: '500', cursor: 'pointer' }}
-                onClick={() => navigate('/units/noir')}
+                onClick={() => {
+                  addDebugLog('Clicked NOIR link');
+                  try {
+                    navigate('/units/noir');
+                    addDebugLog('Navigation called');
+                  } catch (error) {
+                    addDebugLog(`Error: ${error}`);
+                  }
+                }}
               >
                 NOIR
               </span>
@@ -1359,7 +1547,16 @@ export default function BuildAWigPage() {
                     style={{
                       color: '#EB1C24',
                     }}
-                    onClick={() => navigate('/units/noir')}
+                    onClick={() => {
+                      console.log('🔵 CLICKED NOIR TEXT - Navigating to /units/noir');
+                      console.log('🔵 navigate function:', typeof navigate);
+                      try {
+                        navigate('/units/noir');
+                        console.log('🔵 Navigation called successfully');
+                      } catch (error) {
+                        console.error('🔵 Navigation error:', error);
+                      }
+                    }}
                   >
                     NOIR
                   </p>

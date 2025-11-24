@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 // @ts-expect-error - Import kept for potential future use
-import ThumbBox from '../../../components/ThumbBox';
-import DynamicCartIcon from '../../../components/DynamicCartIcon';
-import LoadingScreen from '../../../components/base/LoadingScreen';
+import ThumbBox from '../../../../components/ThumbBox';
+import DynamicCartIcon from '../../../../components/DynamicCartIcon';
+import LoadingScreen from '../../../../components/base/LoadingScreen';
 
 interface DensityOption {
   id: string;
@@ -1409,12 +1409,15 @@ function NoirSelection() {
   const totalPrice = getTotalPrice();
 
   useEffect(() => {
-    // Hide loading screen after 2 seconds
-    const timer = setTimeout(() => {
-      setShowLoading(false);
-    }, 2000);
+    // Hide loading screen immediately for testing
+    setShowLoading(false);
+    
+    // Hide loading screen after 2 seconds (original behavior)
+    // const timer = setTimeout(() => {
+    //   setShowLoading(false);
+    // }, 2000);
 
-    return () => clearTimeout(timer);
+    // return () => clearTimeout(timer);
   }, []);
 
   // Initialize density price correctly when component loads or density changes
@@ -1440,10 +1443,35 @@ function NoirSelection() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Debug: Log that component is rendering
+  console.log('🔴 NOIR COMPONENT RENDERING - showLoading:', showLoading);
+  
   return (
     <>
-      {showLoading && <LoadingScreen />}
+      {/* Debug: Always show a test div - HIGHEST PRIORITY */}
+      <div style={{
+        position: 'fixed', 
+        top: '200px', 
+        left: 0, 
+        right: 0,
+        background: 'red', 
+        color: 'white', 
+        padding: '30px', 
+        zIndex: 999999,
+        fontSize: '32px',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        borderTop: '5px solid white',
+        borderBottom: '5px solid white'
+      }}>
+        🔴🔴🔴 NOIR COMPONENT IS RENDERING! 🔴🔴🔴
+        <br />
+        <span style={{fontSize: '24px'}}>showLoading: {showLoading ? 'true' : 'false'}</span>
+        <br />
+        <span style={{fontSize: '20px'}}>If you see this red box, the component loaded successfully!</span>
+      </div>
       
+      {showLoading && <LoadingScreen />}
       
       <div className="min-h-screen" style={{
         position: 'relative'
