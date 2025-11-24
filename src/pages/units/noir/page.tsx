@@ -14,6 +14,7 @@ interface DensityOption {
 }
 
 function NoirSelection() {
+  console.log('NoirSelection component rendering');
   const navigate = useNavigate();
   const [selectedDensity, setSelectedDensity] = useState(() => {
     return localStorage.getItem('selectedDensity') || '200%';
