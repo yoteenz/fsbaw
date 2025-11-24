@@ -74,122 +74,83 @@ export default function BuildAWigPage() {
 
   // REMOVED: isEditingMode, originalItem, hasChanges - editing is handled by noir/edit page, not this page
 
-  // CRITICAL: Reset to defaults when route changes to main page
-  // This MUST run FIRST and synchronously before any other useEffects
+  // Load selections from localStorage when returning from sub-pages
   useEffect(() => {
-    // Check if we're on the build-a-wig page (not a sub-page)
     const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
     
-    // Update route key to track navigation
-    if (location.pathname !== routeKey) {
-      setRouteKey(location.pathname);
-    }
-    
     if (isMainPage) {
-      console.log('=== ROUTE CHANGE: Clearing localStorage and FORCING defaults ===');
+      // Load selections from localStorage (sub-pages save here)
+      const savedCapSize = localStorage.getItem('selectedCapSize');
+      const savedLength = localStorage.getItem('selectedLength');
+      const savedDensity = localStorage.getItem('selectedDensity');
+      const savedLace = localStorage.getItem('selectedLace');
+      const savedTexture = localStorage.getItem('selectedTexture');
+      const savedColor = localStorage.getItem('selectedColor');
+      const savedHairline = localStorage.getItem('selectedHairline');
+      const savedStyling = localStorage.getItem('selectedStyling');
+      const savedAddOns = localStorage.getItem('selectedAddOns');
       
-      // CRITICAL: Only clear if NOT editing - editing state should persist
-      const editingCartItem = localStorage.getItem('editingCartItem');
-      const isEditing = !!editingCartItem && window.location.pathname.includes('/edit');
-      
-      if (!isEditing) {
-        // Clear all localStorage values IMMEDIATELY
-      localStorage.removeItem('selectedCapSize');
-      localStorage.removeItem('selectedLength');
-      localStorage.removeItem('selectedDensity');
-      localStorage.removeItem('selectedColor');
-      localStorage.removeItem('selectedTexture');
-      localStorage.removeItem('selectedLace');
-      localStorage.removeItem('selectedHairline');
-      localStorage.removeItem('selectedPartSelection');
-      localStorage.removeItem('selectedStyling');
-      localStorage.removeItem('selectedAddOns');
-        localStorage.removeItem('selectedHairStyling');
-        
-        // Set defaults in localStorage so sub-pages can read them
-        const defaults = {
-          capSize: 'M',
-          length: '24"',
-          density: '200%',
-          lace: '13X6',
-          texture: 'SILKY',
-          color: 'OFF BLACK',
-          hairline: 'NATURAL',
-          styling: 'NONE',
-          addOns: [],
-        };
-        
-        localStorage.setItem('selectedCapSize', defaults.capSize);
-        localStorage.setItem('selectedLength', defaults.length);
-        localStorage.setItem('selectedDensity', defaults.density);
-        localStorage.setItem('selectedColor', defaults.color);
-        localStorage.setItem('selectedTexture', defaults.texture);
-        localStorage.setItem('selectedLace', defaults.lace);
-        localStorage.setItem('selectedHairline', defaults.hairline);
-        localStorage.setItem('selectedStyling', defaults.styling);
-        localStorage.setItem('selectedAddOns', JSON.stringify(defaults.addOns));
-        
-        // CRITICAL: Force defaults IMMEDIATELY - use direct set, not functional update
-        setCustomization(defaults);
-        
-        console.log('=== DEFAULTS FORCED:', {
-          length: '24"',
-          density: '200%',
-          pathname: location.pathname,
-          timestamp: new Date().toISOString()
-        });
+      // Only update if we have saved values (coming back from sub-page)
+      if (savedCapSize || savedLength || savedDensity || savedLace || savedTexture || savedColor || savedHairline || savedStyling || savedAddOns) {
+        setCustomization(prev => ({
+          ...prev,
+          capSize: savedCapSize || prev.capSize,
+          length: savedLength || prev.length,
+          density: savedDensity || prev.density,
+          lace: savedLace || prev.lace,
+          texture: savedTexture || prev.texture,
+          color: savedColor || prev.color,
+          hairline: savedHairline || prev.hairline,
+          styling: savedStyling || prev.styling,
+          addOns: savedAddOns ? JSON.parse(savedAddOns) : prev.addOns,
+        }));
       }
     }
-  }, [location.pathname, routeKey]); // Run when route changes
+  }, [location.pathname]); // Run when route changes
   
-  // Also force defaults on mount if not editing - runs AFTER route change effect
+  // Listen for storage changes (when sub-pages update localStorage)
   useEffect(() => {
-    // Check if we're on the main page
-    const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
+    const handleStorageChange = () => {
+      const isMainPage = location.pathname === '/build-a-wig' || location.pathname === '/';
+      
+      if (isMainPage) {
+        const savedCapSize = localStorage.getItem('selectedCapSize');
+        const savedLength = localStorage.getItem('selectedLength');
+        const savedDensity = localStorage.getItem('selectedDensity');
+        const savedLace = localStorage.getItem('selectedLace');
+        const savedTexture = localStorage.getItem('selectedTexture');
+        const savedColor = localStorage.getItem('selectedColor');
+        const savedHairline = localStorage.getItem('selectedHairline');
+        const savedStyling = localStorage.getItem('selectedStyling');
+        const savedAddOns = localStorage.getItem('selectedAddOns');
+        
+        setCustomization(prev => ({
+          ...prev,
+          capSize: savedCapSize || prev.capSize,
+          length: savedLength || prev.length,
+          density: savedDensity || prev.density,
+          lace: savedLace || prev.lace,
+          texture: savedTexture || prev.texture,
+          color: savedColor || prev.color,
+          hairline: savedHairline || prev.hairline,
+          styling: savedStyling || prev.styling,
+          addOns: savedAddOns ? JSON.parse(savedAddOns) : prev.addOns,
+        }));
+      }
+    };
     
-    if (isMainPage) {
-      // Clear localStorage FIRST
-      localStorage.removeItem('selectedCapSize');
-      localStorage.removeItem('selectedLength');
-      localStorage.removeItem('selectedDensity');
-      localStorage.removeItem('selectedColor');
-      localStorage.removeItem('selectedTexture');
-      localStorage.removeItem('selectedLace');
-      localStorage.removeItem('selectedHairline');
-      localStorage.removeItem('selectedPartSelection');
-      localStorage.removeItem('selectedStyling');
-      localStorage.removeItem('selectedAddOns');
-      localStorage.removeItem('selectedHairStyling');
-      
-      // Set defaults in localStorage
-      const defaults = {
-        capSize: 'M',
-        length: '24"',
-        density: '200%',
-        lace: '13X6',
-        texture: 'SILKY',
-        color: 'OFF BLACK',
-        hairline: 'NATURAL',
-        styling: 'NONE',
-        addOns: [],
-      };
-      
-      localStorage.setItem('selectedCapSize', defaults.capSize);
-      localStorage.setItem('selectedLength', defaults.length);
-      localStorage.setItem('selectedDensity', defaults.density);
-      localStorage.setItem('selectedColor', defaults.color);
-      localStorage.setItem('selectedTexture', defaults.texture);
-      localStorage.setItem('selectedLace', defaults.lace);
-      localStorage.setItem('selectedHairline', defaults.hairline);
-      localStorage.setItem('selectedStyling', defaults.styling);
-      localStorage.setItem('selectedAddOns', JSON.stringify(defaults.addOns));
-      
-      // Force defaults IMMEDIATELY
-      setCustomization(defaults);
-      
-      console.log('=== MOUNT: Forced defaults ===');
-    }
-  }, []); // Run on mount only
+    const handleCustomStorageChange = () => {
+      handleStorageChange();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('customStorageChange', handleCustomStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('customStorageChange', handleCustomStorageChange);
+    };
+  }, [location.pathname]);
 
   // REMOVED: Continuously enforce defaults - this was clearing localStorage and preventing sub-pages from showing correct selections
   // The customize page doesn't have this logic - it trusts localStorage and loads from it
@@ -388,7 +349,15 @@ export default function BuildAWigPage() {
   };
 
   const getLaceIcon = () => {
-    return '/assets/lace-icon.svg'; // All lace types use the same icon
+    const selectedLace = customization.lace || '13X6';
+    
+    // Check for full lace options that use different icons
+    if (selectedLace === 'FULL' || selectedLace === '360') {
+      return '/assets/lace-icon.svg'; // Full lace uses standard icon
+    }
+    
+    // All other lace types use the same icon
+    return '/assets/lace-icon.svg';
   };
 
   const getTextureIcon = () => {
