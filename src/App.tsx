@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import BuildAWigPage from './pages/build-a-wig/page';
 import LengthPage from './pages/build-a-wig/length/page';
