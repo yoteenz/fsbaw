@@ -15,6 +15,8 @@ interface DensityOption {
 
 function NoirSelection() {
   const navigate = useNavigate();
+  
+  // Fix for window.REACT_APP_NAVIGATE - use navigate hook instead
   const [selectedDensity, setSelectedDensity] = useState(() => {
     return localStorage.getItem('selectedDensity') || '200%';
   });
