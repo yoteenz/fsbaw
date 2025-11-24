@@ -2970,7 +2970,7 @@ function NoirSelection() {
               localStorage.removeItem('customizeSelectedAddOnsPrice');
               console.log('Customize page - Starting fresh customization');
               
-              navigate('/build-a-wig/noir/customize');
+              navigate('/build-a-wig');
             }}
             className="border border-black font-futura w-full max-w-m text-center py-2 text-[11px] font-semibold bg-white cursor-pointer hover:bg-gray-50"
             style={{ 
