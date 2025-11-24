@@ -15,7 +15,6 @@ interface DensityOption {
 }
 
 function NoirSelection() {
-  console.log('🔴 NOIR COMPONENT IS LOADING! 🔴');
   const navigate = useNavigate();
   
   // Fix for window.REACT_APP_NAVIGATE - use navigate hook instead
@@ -1443,34 +1442,8 @@ function NoirSelection() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Debug: Log that component is rendering
-  console.log('🔴 NOIR COMPONENT RENDERING - showLoading:', showLoading);
-  
   return (
     <>
-      {/* Debug: Always show a test div - HIGHEST PRIORITY */}
-      <div style={{
-        position: 'fixed', 
-        top: '200px', 
-        left: 0, 
-        right: 0,
-        background: 'red', 
-        color: 'white', 
-        padding: '30px', 
-        zIndex: 999999,
-        fontSize: '32px',
-        textAlign: 'center',
-        fontWeight: 'bold',
-        borderTop: '5px solid white',
-        borderBottom: '5px solid white'
-      }}>
-        🔴🔴🔴 NOIR COMPONENT IS RENDERING! 🔴🔴🔴
-        <br />
-        <span style={{fontSize: '24px'}}>showLoading: {showLoading ? 'true' : 'false'}</span>
-        <br />
-        <span style={{fontSize: '20px'}}>If you see this red box, the component loaded successfully!</span>
-      </div>
-      
       {showLoading && <LoadingScreen />}
       
       <div className="min-h-screen" style={{
