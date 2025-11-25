@@ -50,10 +50,10 @@ const LobbyPage: React.FC = () => {
       </div>
       
       {/* Main Content Container */}
-      <div style={{ position: 'relative', zIndex: '10', paddingTop: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', height: '100%' }}>
+      <div style={{ position: 'relative', zIndex: '10', paddingTop: '0px', display: 'block' }}>
         
-        {/* Neon Logo - Center Top */}
-        <div style={{ marginBottom: '20px', padding: '0px', display: 'flex', justifyContent: 'center' }}>
+        {/* Neon Logo - Center */}
+        <div style={{ marginBottom: '0px', padding: '0px' }}>
           <img 
             src="/assets/neon-logo.png" 
             alt="Frontal Slayer" 
@@ -62,7 +62,7 @@ const LobbyPage: React.FC = () => {
         </div>
         
         {/* Navigation Links */}
-        <div style={{ margin: '0', padding: '0', marginBottom: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ margin: '0', padding: '0', position: 'relative', top: '-25px', marginBottom: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0px', margin: '0', padding: '0' }}>
             <img 
               src="/assets/neon-products.png" 
@@ -83,81 +83,79 @@ const LobbyPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Product Display Section */}
-        <div style={{ 
-          position: 'relative', 
-          width: '100%', 
-          maxWidth: '1200px', 
-          margin: '0 auto',
-          padding: '0 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          flex: 1,
-          justifyContent: 'center'
-        }}>
-          
-          {/* Top Shelf - HD LACE */}
-          <div style={{ 
-            position: 'relative', 
+      </div>
+      
+      {/* Product Display Section - Absolute Positioning */}
+      {/* Top Shelf - HD LACE */}
+      <div style={{ 
+        position: 'absolute', 
+        top: '180px', 
+        left: '50%', 
+        transform: 'translateX(-50%)',
+        zIndex: '15',
+        width: 'calc(100% - 40px)',
+        maxWidth: '900px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <img 
+          src="/assets/hd-group.png" 
+          alt="HD Lace Wigs" 
+          style={{ 
             width: '100%', 
-            marginBottom: '30px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <img 
-              src="/assets/hd-group.png" 
-              alt="HD Lace Wigs" 
-              style={{ 
-                width: '100%', 
-                maxWidth: '800px', 
-                height: 'auto',
-                objectFit: 'contain'
-              }}
-            />
-          </div>
-          
-          {/* Middle Shelf - TRANSPARENT LACE */}
-          <div style={{ 
-            position: 'relative', 
+            maxWidth: '100%',
+            height: 'auto',
+            display: 'block'
+          }}
+        />
+      </div>
+      
+      {/* Middle Shelf - TRANSPARENT LACE */}
+      <div style={{ 
+        position: 'absolute', 
+        top: '380px', 
+        left: '50%', 
+        transform: 'translateX(-50%)',
+        zIndex: '15',
+        width: 'calc(100% - 40px)',
+        maxWidth: '900px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <img 
+          src="/assets/transparent-group.png" 
+          alt="Transparent Lace Wigs" 
+          style={{ 
             width: '100%', 
-            marginBottom: '30px',
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <img 
-              src="/assets/transparent-group.png" 
-              alt="Transparent Lace Wigs" 
-              style={{ 
-                width: '100%', 
-                maxWidth: '800px', 
-                height: 'auto',
-                objectFit: 'contain'
-              }}
-            />
-          </div>
-          
-          {/* Bottom Custom Group */}
-          <div style={{ 
-            position: 'relative', 
+            maxWidth: '100%',
+            height: 'auto',
+            display: 'block'
+          }}
+        />
+      </div>
+      
+      {/* Bottom Custom Group */}
+      <div style={{ 
+        position: 'absolute', 
+        top: '580px', 
+        left: '50%', 
+        transform: 'translateX(-50%)',
+        zIndex: '15',
+        width: 'calc(100% - 40px)',
+        maxWidth: '900px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <img 
+          src="/assets/custom-group.png" 
+          alt="Custom Wigs" 
+          style={{ 
             width: '100%', 
-            display: 'flex',
-            justifyContent: 'center'
-          }}>
-            <img 
-              src="/assets/custom-group.png" 
-              alt="Custom Wigs" 
-              style={{ 
-                width: '100%', 
-                maxWidth: '800px', 
-                height: 'auto',
-                objectFit: 'contain'
-              }}
-            />
-          </div>
-          
-        </div>
-        
+            maxWidth: '100%',
+            height: 'auto',
+            display: 'block'
+          }}
+        />
       </div>
     </div>
   );
