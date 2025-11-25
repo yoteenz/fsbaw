@@ -1279,9 +1279,10 @@ function NoirSelection() {
     return 'PLEASE NOTE: EACH CUSTOM UNIT IS MADE TO ORDER. WE ENSURE ALL DETAILS ARE ACCURATE + PRECISE. EXPECT 6 - 8 WEEKS OF PROCESSING TIME FOR THIS UNIT.';
   };
 
-  const getTotalPrice = () => {
+  const getTotalPrice = React.useCallback(() => {
     // For units/noir page, ALWAYS use DEFAULT selections and prices
     // This ensures the price is always $740 or $780, regardless of cart items or localStorage
+    // CRITICAL: Do NOT read from localStorage - this page's price is completely independent
     const capSize = selectedCustomCap || selectedFlexibleCap || 'M';
     
     // Calculate base price based on cap size ONLY
@@ -1290,29 +1291,30 @@ function NoirSelection() {
       basePrice = 780; // Flexible cap options base price is $780
     }
     
-    // All other prices are 0 for default selections on units/noir page
+    // All other prices are ALWAYS 0 for units/noir page - never read from localStorage
     // Default selections: 24", 200%, 13X6, SILKY, OFF BLACK, NATURAL, NONE, []
-    const colorPrice = 0; // OFF BLACK is default
-    const lengthPrice = 0; // 24" is default
-    const densityPrice = 0; // 200% is default
-    const lacePrice = 0; // 13X6 is default
-    const texturePrice = 0; // SILKY is default
-    const hairlinePrice = 0; // NATURAL is default
-    const stylingPrice = 0; // NONE is default
-    const addOnsPrice = 0; // No add-ons by default
+    const colorPrice = 0; // OFF BLACK is default - NEVER read from localStorage
+    const lengthPrice = 0; // 24" is default - NEVER read from localStorage
+    const densityPrice = 0; // 200% is default - NEVER read from localStorage
+    const lacePrice = 0; // 13X6 is default - NEVER read from localStorage
+    const texturePrice = 0; // SILKY is default - NEVER read from localStorage
+    const hairlinePrice = 0; // NATURAL is default - NEVER read from localStorage
+    const stylingPrice = 0; // NONE is default - NEVER read from localStorage
+    const addOnsPrice = 0; // No add-ons by default - NEVER read from localStorage
     
     const calculatedPrice = basePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
     
-    console.log('Units/Noir - getTotalPrice calculated:', {
+    console.log('Units/Noir - getTotalPrice calculated (isolated from localStorage):', {
       capSize,
       basePrice,
       calculatedPrice,
       selectedCustomCap,
-      selectedFlexibleCap
+      selectedFlexibleCap,
+      note: 'Price is completely independent - not reading from localStorage or cart'
     });
     
     return calculatedPrice;
-  };
+  }, [selectedCustomCap, selectedFlexibleCap]);
 
   // Use useMemo to recalculate price when cap selection changes
   const totalPrice = React.useMemo(() => {
