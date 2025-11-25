@@ -258,11 +258,57 @@ export default function BuildAWigPage() {
       // Load from editingCartItem for edit mode
       const editingCartItem = localStorage.getItem('editingCartItem');
       const editingCartItemId = localStorage.getItem('editingCartItemId');
+      const comingFromSubPage = sessionStorage.getItem('comingFromSubPage') === 'true';
       
       // Check if this is a different item - if so, we need to reload
       const isDifferentItem = editingCartItemId && editingCartItemId !== currentEditingItemIdRef.current;
       
-      if (editingCartItem && (isDifferentItem || !currentEditingItemIdRef.current)) {
+      // If coming from sub-page, load updated values from localStorage
+      if (comingFromSubPage && editingCartItemId && editingCartItemId === currentEditingItemIdRef.current) {
+        console.log('BuildAWigPage - Edit mode: Returning from sub-page, loading updated values from localStorage');
+        
+        // Load updated values from localStorage (set by sub-pages)
+        const savedCapSize = localStorage.getItem('selectedCapSize');
+        const savedLength = localStorage.getItem('selectedLength');
+        const savedDensity = localStorage.getItem('selectedDensity');
+        const savedLace = localStorage.getItem('selectedLace');
+        const savedTexture = localStorage.getItem('selectedTexture');
+        const savedColor = localStorage.getItem('selectedColor');
+        const savedHairline = localStorage.getItem('selectedHairline');
+        const savedStyling = localStorage.getItem('selectedStyling');
+        const savedAddOns = localStorage.getItem('selectedAddOns');
+        
+        if (savedCapSize || savedLength || savedDensity || savedLace || savedTexture || savedColor || savedHairline || savedStyling || savedAddOns) {
+          // CRITICAL: Ensure styling is not a part selection (MIDDLE, LEFT, RIGHT) - it should be NONE or a valid styling option
+          let validStyling = savedStyling !== null ? savedStyling : 'NONE';
+          const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
+          if (partSelectionOptions.includes(validStyling)) {
+            validStyling = 'NONE'; // If styling is a part selection, set to NONE
+          }
+          
+          const updatedCustomization = {
+            capSize: savedCapSize || 'M',
+            length: savedLength || '24"',
+            density: savedDensity || '200%',
+            lace: savedLace || '13X6',
+            texture: savedTexture || 'SILKY',
+            color: savedColor || 'OFF BLACK',
+            hairline: savedHairline || 'NATURAL',
+            styling: validStyling,
+            addOns: savedAddOns ? JSON.parse(savedAddOns) : [],
+          };
+          
+          // Update customization state (originalItem stays the same for change detection)
+          setCustomization(updatedCustomization);
+          
+          // Trigger price recalculation
+          setRefreshTrigger(prev => prev + 1);
+        }
+        
+        // Clear the flag
+        sessionStorage.removeItem('comingFromSubPage');
+      } else if (editingCartItem && (isDifferentItem || !currentEditingItemIdRef.current)) {
+        // First load or different item: load from editingCartItem
         try {
           const item = JSON.parse(editingCartItem);
           console.log('BuildAWigPage - Edit mode: Loading selections from cart item:', item);
