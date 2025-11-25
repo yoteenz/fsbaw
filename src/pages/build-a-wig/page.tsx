@@ -450,29 +450,31 @@ export default function BuildAWigPage() {
         setRefreshTrigger(prev => prev + 1);
         
         // Force change detection to run after state update
-        // Use setTimeout to ensure state has updated before checking for changes
-        setTimeout(() => {
-          if (originalItem) {
-            const hasChangesDetected = 
-              updatedCustomization.capSize !== originalItem.capSize ||
-              updatedCustomization.length !== originalItem.length ||
-              updatedCustomization.density !== originalItem.density ||
-              updatedCustomization.lace !== originalItem.lace ||
-              updatedCustomization.texture !== originalItem.texture ||
-              updatedCustomization.color !== originalItem.color ||
-              updatedCustomization.hairline !== originalItem.hairline ||
-              updatedCustomization.styling !== originalItem.styling ||
-              JSON.stringify(updatedCustomization.addOns) !== JSON.stringify(originalItem.addOns);
-            
-            console.log('BuildAWigPage - Edit mode: Change detection after returning from sub-page:', {
-              hasChangesDetected,
-              updatedColor: updatedCustomization.color,
-              originalColor: originalItem.color
-            });
-            
-            setHasChanges(hasChangesDetected);
-          }
-        }, 50);
+        // Compare updatedCustomization with originalItem immediately (originalItem is in closure)
+        // The change detection useEffect will also run when customization state updates, but this ensures it happens
+        if (originalItem) {
+          const hasChangesDetected = 
+            updatedCustomization.capSize !== originalItem.capSize ||
+            updatedCustomization.length !== originalItem.length ||
+            updatedCustomization.density !== originalItem.density ||
+            updatedCustomization.lace !== originalItem.lace ||
+            updatedCustomization.texture !== originalItem.texture ||
+            updatedCustomization.color !== originalItem.color ||
+            updatedCustomization.hairline !== originalItem.hairline ||
+            updatedCustomization.styling !== originalItem.styling ||
+            JSON.stringify(updatedCustomization.addOns) !== JSON.stringify(originalItem.addOns);
+          
+          console.log('BuildAWigPage - Edit mode: Change detection after returning from sub-page:', {
+            hasChangesDetected,
+            updatedColor: updatedCustomization.color,
+            originalColor: originalItem.color,
+            updatedLength: updatedCustomization.length,
+            originalLength: originalItem.length
+          });
+          
+          // Set hasChanges immediately - the useEffect will also run but this ensures it's set
+          setHasChanges(hasChangesDetected);
+        }
         }
         
         // Clear the flag
