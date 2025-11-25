@@ -454,7 +454,17 @@ export default function BuildAWigPage() {
   const [processingTimeText, setProcessingTimeText] = useState('EXPECT 6 - 8 WEEKS OF PROCESSING TIME FOR THIS UNIT.');
   
   // Add to bag button states: 'idle', 'adding', 'added'
-  const [addToBagState, setAddToBagState] = useState<'idle' | 'adding' | 'added'>('idle');
+  // Initialize button state based on route - edit mode should start as 'added'
+  const [addToBagState, setAddToBagState] = useState<'idle' | 'adding' | 'added'>(() => {
+    const isEditPage = location.pathname === '/build-a-wig/edit';
+    if (isEditPage) {
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        return 'added'; // Edit mode: item is already in cart, show "IN THE BAG"
+      }
+    }
+    return 'idle';
+  });
   const [currentConfiguration, setCurrentConfiguration] = useState<string>('');
   
   // Edit mode state: track original item and detect changes
