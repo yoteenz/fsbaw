@@ -1342,7 +1342,7 @@ function NoirSelection() {
     // Calculate base price based on cap size
     let basePrice = 740; // Default for standard caps (XS, S, M, L)
     if (capSize === 'XXS/XS/S' || capSize === 'S/M/L') {
-      basePrice = 780; // Flexible cap options cost $40 extra
+      basePrice = 780; // Flexible cap options base price is $780
     }
     
     // Add color price - use stored price or calculate from color name
@@ -3021,41 +3021,52 @@ function NoirSelection() {
         <div className="px-0 md:px-0" style={{ marginTop: '10px' }}>
           <button
             onClick={() => {
-              // Store ONLY the selected cap size in localStorage for customize page
+              // Store the selected cap size in localStorage for customize page
+              // Use selectedCapSize (not customizeSelectedCapSize) so build-a-wig page can load it
               if (selectedCustomCap) {
-                localStorage.setItem('customizeSelectedCapSize', selectedCustomCap);
-                localStorage.setItem('customizeSelectedCapSizePrice', '0'); // Custom cap has no additional price
+                localStorage.setItem('selectedCapSize', selectedCustomCap);
+                localStorage.setItem('selectedCapSizePrice', '0'); // Custom cap has no additional price
               } else if (selectedFlexibleCap) {
-                localStorage.setItem('customizeSelectedCapSize', selectedFlexibleCap);
-                localStorage.setItem('customizeSelectedCapSizePrice', '0'); // Flexible cap extra cost is included in base price
+                localStorage.setItem('selectedCapSize', selectedFlexibleCap);
+                localStorage.setItem('selectedCapSizePrice', '0'); // Flexible cap base price is 780, not 740+60
               }
               
-              // Clear any existing editing state and sub-page selections - customize button always starts fresh
-              localStorage.removeItem('customizeEditingCartItem');
-              localStorage.removeItem('customizeEditingCartItemId');
+              // Set defaults for other selections so customize page loads with defaults + selected cap
+              const defaults = {
+                length: '24"',
+                density: '200%',
+                lace: '13X6',
+                texture: 'SILKY',
+                color: 'OFF BLACK',
+                hairline: 'NATURAL',
+                styling: 'NONE',
+                addOns: [],
+              };
               
-              // Clear all sub-page selections to ensure fresh start with defaults
-              localStorage.removeItem('customizeSelectedLength');
-              localStorage.removeItem('customizeSelectedDensity');
-              localStorage.removeItem('customizeSelectedLace');
-              localStorage.removeItem('customizeSelectedTexture');
-              localStorage.removeItem('customizeSelectedColor');
-              localStorage.removeItem('customizeSelectedHairline');
-              localStorage.removeItem('customizeSelectedStyling');
-              localStorage.removeItem('customizeSelectedAddOns');
-              localStorage.removeItem('customizeSelectedHairStyling');
-              localStorage.removeItem('customizeSelectedPartSelection');
+              localStorage.setItem('selectedLength', defaults.length);
+              localStorage.setItem('selectedDensity', defaults.density);
+              localStorage.setItem('selectedLace', defaults.lace);
+              localStorage.setItem('selectedTexture', defaults.texture);
+              localStorage.setItem('selectedColor', defaults.color);
+              localStorage.setItem('selectedHairline', defaults.hairline);
+              localStorage.setItem('selectedStyling', defaults.styling);
+              localStorage.setItem('selectedAddOns', JSON.stringify(defaults.addOns));
               
-              // Clear all sub-page prices
-              localStorage.removeItem('customizeSelectedLengthPrice');
-              localStorage.removeItem('customizeSelectedDensityPrice');
-              localStorage.removeItem('customizeSelectedLacePrice');
-              localStorage.removeItem('customizeSelectedTexturePrice');
-              localStorage.removeItem('customizeSelectedColorPrice');
-              localStorage.removeItem('customizeSelectedHairlinePrice');
-              localStorage.removeItem('customizeSelectedStylingPrice');
-              localStorage.removeItem('customizeSelectedAddOnsPrice');
-              console.log('Customize page - Starting fresh customization');
+              // Set all default prices to 0
+              localStorage.setItem('selectedLengthPrice', '0');
+              localStorage.setItem('selectedDensityPrice', '0');
+              localStorage.setItem('selectedLacePrice', '0');
+              localStorage.setItem('selectedTexturePrice', '0');
+              localStorage.setItem('selectedColorPrice', '0');
+              localStorage.setItem('selectedHairlinePrice', '0');
+              localStorage.setItem('selectedStylingPrice', '0');
+              localStorage.setItem('selectedAddOnsPrice', '0');
+              
+              // Clear any existing editing state
+              localStorage.removeItem('editingCartItem');
+              localStorage.removeItem('editingCartItemId');
+              
+              console.log('Customize page - Starting fresh customization with cap size:', selectedCustomCap || selectedFlexibleCap);
               
               navigate('/build-a-wig/noir/customize');
             }}

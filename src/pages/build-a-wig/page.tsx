@@ -25,9 +25,56 @@ export default function BuildAWigPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [routeKey, setRouteKey] = useState(location.pathname);
   
-  // ALWAYS use default values for build-a-wig page - never check editingCartItem
-  // Editing is handled separately by the noir/edit page, not this page
   const [customization, setCustomization] = useState<WigCustomization>(() => {
+    // Check if we're in edit mode or customize mode
+    const isEditMode = window.location.pathname === '/build-a-wig/edit';
+    const isCustomizeMode = window.location.pathname === '/build-a-wig/noir/customize';
+    
+    // If in customize mode, load cap size with defaults
+    if (isCustomizeMode) {
+      const savedCapSize = localStorage.getItem('selectedCapSize');
+      if (savedCapSize) {
+        console.log('BuildAWigPage - Initialize customize mode with cap size:', savedCapSize);
+        return {
+          capSize: savedCapSize,
+          length: '24"',
+          density: '200%',
+          lace: '13X6',
+          texture: 'SILKY',
+          color: 'OFF BLACK',
+          hairline: 'NATURAL',
+          styling: 'NONE',
+          addOns: [],
+        };
+      }
+    }
+    
+    // If in edit mode, load from editingCartItem
+    if (isEditMode) {
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          console.log('BuildAWigPage - Loading edit mode selections:', item);
+          
+          // Return the cart item's selections
+          return {
+            capSize: item.capSize || 'M',
+            length: item.length || '24"',
+            density: item.density || '200%',
+            lace: item.lace || '13X6',
+            texture: item.texture || 'SILKY',
+            color: item.color || 'OFF BLACK',
+            hairline: item.hairline || 'NATURAL',
+            styling: item.styling || 'NONE',
+            addOns: item.addOns || [],
+          };
+        } catch (error) {
+          console.error('BuildAWigPage - Error parsing editingCartItem:', error);
+        }
+      }
+    }
+    
     // Check if there are saved values (coming back from sub-page)
     // If not, clear localStorage and set defaults (first visit)
     const hasSavedValues = localStorage.getItem('selectedCapSize') || 
@@ -99,12 +146,21 @@ export default function BuildAWigPage() {
       localStorage.setItem('selectedAddOnsPrice', '0');
     }
     
-    // ALWAYS return defaults - never load from localStorage
+    // Return defaults for normal mode
     // The route change effect will load from localStorage when returning from sub-pages
     return defaults;
   });
 
-  const [basePrice] = useState(740);
+  // Calculate base price dynamically based on cap size
+  const basePrice = useMemo(() => {
+    const capSize = customization.capSize || 'M';
+    // Flexible cap options have base price of 780, standard caps are 740
+    if (capSize === 'XXS/XS/S' || capSize === 'S/M/L') {
+      return 780;
+    }
+    return 740;
+  }, [customization.capSize]);
+  
   const [totalPrice, setTotalPrice] = useState(740);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -114,18 +170,134 @@ export default function BuildAWigPage() {
 
   // REMOVED: isEditingMode, originalItem, hasChanges - editing is handled by noir/edit page, not this page
 
-  // Load selections from localStorage when returning from sub-pages
+  // Load selections from localStorage when returning from sub-pages or in edit mode
   useEffect(() => {
-    // Check if we're on the build-a-wig page (not a sub-page)
+    // Check if we're on the build-a-wig page, edit page, or customize page (not a sub-page)
     // NOTE: Removed check for '/' since root path now goes to lobby page
     const isMainPage = location.pathname === '/build-a-wig';
+    const isEditPage = location.pathname === '/build-a-wig/edit';
+    const isCustomizePage = location.pathname === '/build-a-wig/noir/customize';
     
     // Update route key to track navigation
     if (location.pathname !== routeKey) {
       setRouteKey(location.pathname);
     }
     
-    if (isMainPage) {
+    if (isCustomizePage) {
+      // Set flag to prevent sync effect from overwriting
+      isLoadingFromStorage.current = true;
+      
+      // Load cap size from localStorage (set by customize button) with defaults for other selections
+      const savedCapSize = localStorage.getItem('selectedCapSize');
+      
+      if (savedCapSize) {
+        console.log('BuildAWigPage - Customize mode: Loading cap size with defaults:', savedCapSize);
+        
+        // Load cap size with defaults for other selections
+        const defaults = {
+          length: '24"',
+          density: '200%',
+          lace: '13X6',
+          texture: 'SILKY',
+          color: 'OFF BLACK',
+          hairline: 'NATURAL',
+          styling: 'NONE',
+          addOns: [],
+        };
+        
+        setCustomization({
+          capSize: savedCapSize,
+          length: defaults.length,
+          density: defaults.density,
+          lace: defaults.lace,
+          texture: defaults.texture,
+          color: defaults.color,
+          hairline: defaults.hairline,
+          styling: defaults.styling,
+          addOns: defaults.addOns,
+        });
+        
+        // Ensure defaults are in localStorage
+        localStorage.setItem('selectedLength', defaults.length);
+        localStorage.setItem('selectedDensity', defaults.density);
+        localStorage.setItem('selectedLace', defaults.lace);
+        localStorage.setItem('selectedTexture', defaults.texture);
+        localStorage.setItem('selectedColor', defaults.color);
+        localStorage.setItem('selectedHairline', defaults.hairline);
+        localStorage.setItem('selectedStyling', defaults.styling);
+        localStorage.setItem('selectedAddOns', JSON.stringify(defaults.addOns));
+        
+        // Set all default prices to 0
+        localStorage.setItem('selectedLengthPrice', '0');
+        localStorage.setItem('selectedDensityPrice', '0');
+        localStorage.setItem('selectedLacePrice', '0');
+        localStorage.setItem('selectedTexturePrice', '0');
+        localStorage.setItem('selectedColorPrice', '0');
+        localStorage.setItem('selectedHairlinePrice', '0');
+        localStorage.setItem('selectedStylingPrice', '0');
+        localStorage.setItem('selectedAddOnsPrice', '0');
+        
+        // Trigger price recalculation
+        setRefreshTrigger(prev => prev + 1);
+      }
+      
+      // Clear flag after a short delay to allow state update to complete
+      setTimeout(() => {
+        isLoadingFromStorage.current = false;
+      }, 100);
+    } else if (isEditPage) {
+      // Set flag to prevent sync effect from overwriting
+      isLoadingFromStorage.current = true;
+      
+      // Load from editingCartItem for edit mode
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          console.log('BuildAWigPage - Edit mode: Loading selections from cart item:', item);
+          
+          // CRITICAL: Ensure styling is not a part selection (MIDDLE, LEFT, RIGHT) - it should be NONE or a valid styling option
+          let validStyling = item.styling || 'NONE';
+          const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
+          if (partSelectionOptions.includes(validStyling)) {
+            validStyling = 'NONE'; // If styling is a part selection, set to NONE
+          }
+          
+          setCustomization({
+            capSize: item.capSize || 'M',
+            length: item.length || '24"',
+            density: item.density || '200%',
+            lace: item.lace || '13X6',
+            texture: item.texture || 'SILKY',
+            color: item.color || 'OFF BLACK',
+            hairline: item.hairline || 'NATURAL',
+            styling: validStyling,
+            addOns: item.addOns || [],
+          });
+          
+          // Also update localStorage so sub-pages can read the edit values
+          localStorage.setItem('selectedCapSize', item.capSize || 'M');
+          localStorage.setItem('selectedLength', item.length || '24"');
+          localStorage.setItem('selectedDensity', item.density || '200%');
+          localStorage.setItem('selectedColor', item.color || 'OFF BLACK');
+          localStorage.setItem('selectedTexture', item.texture || 'SILKY');
+          localStorage.setItem('selectedLace', item.lace || '13X6');
+          localStorage.setItem('selectedHairline', item.hairline || 'NATURAL');
+          localStorage.setItem('selectedStyling', validStyling);
+          localStorage.setItem('selectedAddOns', JSON.stringify(item.addOns || []));
+          
+          // Trigger price recalculation
+          setRefreshTrigger(prev => prev + 1);
+        } catch (error) {
+          console.error('BuildAWigPage - Error parsing editingCartItem:', error);
+        }
+      }
+      
+      // Clear flag after a short delay to allow state update to complete
+      setTimeout(() => {
+        isLoadingFromStorage.current = false;
+      }, 100);
+    } else if (isMainPage) {
       // Set flag to prevent sync effect from overwriting
       isLoadingFromStorage.current = true;
       
