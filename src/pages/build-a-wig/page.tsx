@@ -259,7 +259,10 @@ export default function BuildAWigPage() {
       const editingCartItem = localStorage.getItem('editingCartItem');
       const editingCartItemId = localStorage.getItem('editingCartItemId');
       
-      if (editingCartItem) {
+      // Check if this is a different item - if so, we need to reload
+      const isDifferentItem = editingCartItemId && editingCartItemId !== currentEditingItemIdRef.current;
+      
+      if (editingCartItem && (isDifferentItem || !currentEditingItemIdRef.current)) {
         try {
           const item = JSON.parse(editingCartItem);
           console.log('BuildAWigPage - Edit mode: Loading selections from cart item:', item);
