@@ -37,7 +37,6 @@ const LobbyPage: React.FC = () => {
           backgroundPosition: 'center center',
           backgroundColor: 'white',
           willChange: 'auto',
-          backfaceVisibility: 'hidden',
           contain: 'layout style paint'
         }}
       />
@@ -204,7 +203,7 @@ const LobbyPage: React.FC = () => {
       <div style={{
         position: 'absolute',
         right: '20px',
-        top: '50%',
+        top: 'calc(50vh)',
         transform: 'translate(22px, -50%)',
         zIndex: 999999,
         display: 'flex',
@@ -230,23 +229,23 @@ const LobbyPage: React.FC = () => {
             justifyContent: 'center',
             padding: '10px 10px 0px 10px',
             transition: 'all 0.3s ease',
-            opacity: 0.7,
+            opacity: 0.6,
             pointerEvents: 'auto',
             WebkitTapHighlightColor: 'transparent',
             touchAction: 'manipulation'
           }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '0.9';
+              e.currentTarget.style.opacity = '0.8';
               e.currentTarget.style.transform = 'scale(1.1)';
             }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0.7';
+            e.currentTarget.style.opacity = '0.6';
             e.currentTarget.style.transform = 'scale(1)';
           }}
         >
           <svg 
-            width="32" 
-            height="24" 
+            width="27" 
+            height="19" 
             viewBox="0 0 32 24" 
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
@@ -274,7 +273,7 @@ const LobbyPage: React.FC = () => {
           fontFamily: 'Bohemy, serif',
           fontSize: '16px',
           color: 'white',
-          opacity: 0.7,
+          opacity: 0.6,
           letterSpacing: '1px',
           textAlign: 'center',
           width: '100%',
@@ -314,7 +313,6 @@ const LoungePage: React.FC = () => {
           backgroundRepeat: 'no-repeat',
           backgroundColor: 'white',
           willChange: 'auto',
-          backfaceVisibility: 'hidden',
           contain: 'layout style paint'
         }}
       />
@@ -422,7 +420,7 @@ const LoungePage: React.FC = () => {
       <div style={{
         position: 'absolute',
         left: '20px',
-        top: '50%',
+        top: 'calc(50vh)',
         transform: 'translate(-22px, -50%)',
         zIndex: 999999,
         display: 'flex',
@@ -448,23 +446,23 @@ const LoungePage: React.FC = () => {
             justifyContent: 'center',
             padding: '10px 10px 0px 10px',
             transition: 'all 0.3s ease',
-            opacity: 0.7,
+            opacity: 0.6,
             pointerEvents: 'auto',
             WebkitTapHighlightColor: 'transparent',
             touchAction: 'manipulation'
           }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '0.9';
+              e.currentTarget.style.opacity = '0.8';
               e.currentTarget.style.transform = 'scale(1.1)';
             }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0.7';
+            e.currentTarget.style.opacity = '0.6';
             e.currentTarget.style.transform = 'scale(1)';
           }}
         >
           <svg 
-            width="32" 
-            height="24" 
+            width="27" 
+            height="19" 
             viewBox="0 0 32 24" 
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
@@ -492,7 +490,7 @@ const LoungePage: React.FC = () => {
           fontFamily: 'Bohemy, serif',
           fontSize: '16px',
           color: 'white',
-          opacity: 0.7,
+          opacity: 0.6,
           letterSpacing: '1px',
           textAlign: 'center',
           width: '100%',
@@ -586,15 +584,24 @@ const LobbyApp: React.FC = () => {
         style={{
           display: 'flex',
           width: `${pages.length * 100}vw`,
-          height: 'auto',
-          minHeight: '100vh',
+          minHeight: '105vh',
           transform: `translateX(-${currentPage * 100}vw)`,
           transition: isTransitioning ? 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-          willChange: isTransitioning ? 'transform' : 'auto',
-          alignItems: 'flex-start'
+          willChange: isTransitioning ? 'transform' : 'auto'
         }}
       >
-        {pages}
+        {pages.map((page, index) => (
+          <div
+            key={index}
+            style={{
+              width: '100vw',
+              flexShrink: 0,
+              minHeight: index === 0 ? '100vh' : '105vh'
+            }}
+          >
+            {page}
+          </div>
+        ))}
       </div>
     </div>
   );
