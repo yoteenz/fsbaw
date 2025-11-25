@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode, useEffect } from 'react';
 import LobbyPage from './pages/lobby/page';
 import BuildAWigPage from './pages/build-a-wig/page';
 import LengthPage from './pages/build-a-wig/length/page';
@@ -82,9 +82,17 @@ function App() {
   const location = useLocation();
   console.log('🔍 App.tsx rendering - Current pathname:', location.pathname);
   
+  // Additional safeguard: if we're on root and somehow BuildAWigPage is rendering, log it
+  useEffect(() => {
+    if (location.pathname === '/' && window.location.pathname !== '/') {
+      console.error('⚠️ Route mismatch detected!');
+    }
+  }, [location.pathname]);
+  
   return (
     <ErrorBoundary>
       <Routes>
+        <Route index element={<LobbyPage />} />
         <Route path="/" element={<LobbyPage />} />
         {/* Admin routes - placed before build-a-wig routes for proper matching */}
         <Route path="/admin/dashboard" element={
