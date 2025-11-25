@@ -156,8 +156,8 @@ export default function AdminHeader({
   const [readMessages, setReadMessages] = useState<number[]>([]);
 
   // Long press detection states
-  const [messagesLongPressTimer, setMessagesLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const [notificationsLongPressTimer, setNotificationsLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [messagesLongPressTimer, setMessagesLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [notificationsLongPressTimer, setNotificationsLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [showInactiveNotifications, setShowInactiveNotifications] = useState(false);
   const [showInactiveMessages, setShowInactiveMessages] = useState(false);
 
@@ -186,7 +186,7 @@ export default function AdminHeader({
 
   // Debounce function
   const debounce = (func: Function, wait: number) => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     return function executedFunction(...args: any[]) {
       const later = () => {
         clearTimeout(timeout);

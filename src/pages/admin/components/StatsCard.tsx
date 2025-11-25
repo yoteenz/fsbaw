@@ -64,7 +64,7 @@ export default function StatsCard({ data, onCardClick }: StatsCardProps) {
       { ref: itemsContainerRef, content: null }
     ];
 
-    const intervals: NodeJS.Timeout[] = [];
+    const intervals: ReturnType<typeof setTimeout>[] = [];
 
     scrollElements.forEach(({ ref, content }) => {
       if (ref.current && content) {
