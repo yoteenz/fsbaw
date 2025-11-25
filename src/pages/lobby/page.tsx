@@ -92,7 +92,7 @@ const LobbyPage: React.FC = () => {
           position: 'absolute',
           top: '50%',
           left: '50%',
-          transform: 'translate(calc(-50% + 51px), calc(-50% - 138px))',
+          transform: 'translate(calc(-50% + 51px), calc(-50% - 131px))',
           zIndex: 20,
           margin: 0,
           padding: 0
@@ -133,7 +133,7 @@ const LobbyPage: React.FC = () => {
               src="/assets/hd-group.png" 
               alt="HD Lace Collection" 
               className="w-auto md:h-20 lg:h-24"
-              style={{ height: '64px' }}
+              style={{ height: '56px' }}
             />
           </div>
           
@@ -143,7 +143,7 @@ const LobbyPage: React.FC = () => {
               src="/assets/transparent-group.png" 
               alt="Transparent Lace Collection" 
               className="w-auto md:h-20 lg:h-24"
-              style={{ height: '64px' }}
+              style={{ height: '56px' }}
             />
           </div>
           
@@ -153,7 +153,7 @@ const LobbyPage: React.FC = () => {
               src="/assets/custom-group.png" 
               alt="Custom Units Collection" 
               className="w-auto md:h-20 lg:h-24"
-              style={{ height: '64px' }}
+              style={{ height: '56px' }}
             />
           </div>
         </div>
@@ -203,7 +203,7 @@ const LobbyPage: React.FC = () => {
       <div style={{
         position: 'absolute',
         right: '20px',
-        top: 'calc(50vh)',
+        top: 'calc(50vh - 5px)',
         transform: 'translate(22px, -50%)',
         zIndex: 999999,
         display: 'flex',
@@ -270,14 +270,15 @@ const LobbyPage: React.FC = () => {
           </svg>
         </button>
         <div style={{
-          fontFamily: 'Bohemy, serif',
-          fontSize: '16px',
+          fontFamily: 'Futura PT Medium, Futura PT, Futura, sans-serif',
+          fontSize: '8px',
           color: 'white',
           opacity: 0.6,
           letterSpacing: '1px',
           textAlign: 'center',
           width: '100%',
-          transform: 'translateX(-2px)'
+          transform: 'translateX(-2px)',
+          textTransform: 'uppercase'
         }}>
           lobby
         </div>
@@ -420,8 +421,8 @@ const LoungePage: React.FC = () => {
       <div style={{
         position: 'absolute',
         left: '20px',
-        top: 'calc(50vh)',
-        transform: 'translate(-22px, -50%)',
+        top: 'calc(50vh - 5px)',
+        transform: 'translate(-17px, -50%)',
         zIndex: 999999,
         display: 'flex',
         flexDirection: 'column',
@@ -487,14 +488,15 @@ const LoungePage: React.FC = () => {
           </svg>
         </button>
         <div style={{
-          fontFamily: 'Bohemy, serif',
-          fontSize: '16px',
+          fontFamily: 'Futura PT Medium, Futura PT, Futura, sans-serif',
+          fontSize: '8px',
           color: 'white',
           opacity: 0.6,
           letterSpacing: '1px',
           textAlign: 'center',
           width: '100%',
-          transform: 'translateX(4px)'
+          transform: 'translateX(4px)',
+          textTransform: 'uppercase'
         }}>
           lounge
         </div>
@@ -515,7 +517,7 @@ const LobbyApp: React.FC = () => {
     if (currentPage > 0 && !isTransitioning) {
       setIsTransitioning(true);
       setCurrentPage(currentPage - 1);
-      setTimeout(() => setIsTransitioning(false), 600);
+      setTimeout(() => setIsTransitioning(false), 800);
     }
   }, [currentPage, isTransitioning]);
 
@@ -523,7 +525,7 @@ const LobbyApp: React.FC = () => {
     if (currentPage < pages.length - 1 && !isTransitioning) {
       setIsTransitioning(true);
       setCurrentPage(currentPage + 1);
-      setTimeout(() => setIsTransitioning(false), 600);
+      setTimeout(() => setIsTransitioning(false), 800);
     }
   }, [currentPage, isTransitioning, pages.length]);
 
@@ -547,7 +549,7 @@ const LobbyApp: React.FC = () => {
       if (currentPage < pages.length - 1 && !isTransitioning) {
         setIsTransitioning(true);
         setCurrentPage(currentPage + 1);
-        setTimeout(() => setIsTransitioning(false), 600);
+        setTimeout(() => setIsTransitioning(false), 800);
       }
     };
     
@@ -555,7 +557,7 @@ const LobbyApp: React.FC = () => {
       if (currentPage > 0 && !isTransitioning) {
         setIsTransitioning(true);
         setCurrentPage(currentPage - 1);
-        setTimeout(() => setIsTransitioning(false), 600);
+        setTimeout(() => setIsTransitioning(false), 800);
       }
     };
 
@@ -586,7 +588,7 @@ const LobbyApp: React.FC = () => {
           width: `${pages.length * 100}vw`,
           minHeight: '105vh',
           transform: `translateX(-${currentPage * 100}vw)`,
-          transition: isTransitioning ? 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+          transition: isTransitioning ? 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
           willChange: isTransitioning ? 'transform' : 'auto'
         }}
       >
