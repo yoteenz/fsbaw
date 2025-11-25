@@ -491,38 +491,6 @@ const LobbyApp: React.FC = () => {
           →
         </button>
       )}
-
-      {/* Page Indicators */}
-      <div style={{
-        position: 'fixed',
-        bottom: '30px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 9999,
-        display: 'flex',
-        gap: '10px'
-      }}>
-        {pages.map((_, index) => (
-          <div
-            key={index}
-            style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: index === currentPage ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.5)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onClick={() => {
-              if (!isTransitioning) {
-                setIsTransitioning(true);
-                setCurrentPage(index);
-                setTimeout(() => setIsTransitioning(false), 600);
-              }
-            }}
-          />
-        ))}
-      </div>
     </div>
   );
 };
