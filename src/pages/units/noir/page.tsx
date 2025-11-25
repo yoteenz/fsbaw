@@ -1330,6 +1330,25 @@ function NoirSelection() {
     return () => clearTimeout(timer);
   }, []);
 
+  // CRITICAL: Clear any stale localStorage price values on page load
+  // The units/noir page price should ALWAYS be $740 or $780, independent of cart items or other pages
+  useEffect(() => {
+    // Clear all price-related localStorage values to ensure they don't affect the displayed price
+    // The getTotalPrice() function doesn't read from localStorage, but we clear these
+    // to prevent any other code from accidentally using stale values
+    localStorage.removeItem('selectedColorPrice');
+    localStorage.removeItem('selectedLengthPrice');
+    localStorage.removeItem('selectedDensityPrice');
+    localStorage.removeItem('selectedLacePrice');
+    localStorage.removeItem('selectedTexturePrice');
+    localStorage.removeItem('selectedHairlinePrice');
+    localStorage.removeItem('selectedStylingPrice');
+    localStorage.removeItem('selectedAddOnsPrice');
+    localStorage.removeItem('selectedCapSizePrice');
+    
+    console.log('Units/Noir - Cleared all localStorage price values to ensure base price display');
+  }, []); // Run once on mount
+
   // Initialize density price correctly when component loads or density changes
   // NOTE: For units/noir page, we don't need to update localStorage prices
   // since getTotalPrice() always returns base price ($740 or $780) regardless of localStorage
