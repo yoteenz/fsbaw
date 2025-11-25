@@ -1343,18 +1343,8 @@ function NoirSelection() {
     return calculatedPrice;
   }, [selectedCustomCap, selectedFlexibleCap]);
 
-  // Use useMemo to recalculate price when cap selection changes
-  // CRITICAL: Include getTotalPrice in dependencies since it's a useCallback
-  const totalPrice = React.useMemo(() => {
-    const price = getTotalPrice();
-    console.log('Units/Noir - totalPrice useMemo calculated:', {
-      price,
-      selectedCustomCap,
-      selectedFlexibleCap,
-      note: 'Price should be 740 or 780 only'
-    });
-    return price;
-  }, [getTotalPrice, selectedCustomCap, selectedFlexibleCap]);
+  // NOTE: We call getTotalPrice() directly in the JSX instead of using a memoized variable
+  // This ensures we always get the latest calculated price without stale values
 
   useEffect(() => {
     // Hide loading screen after 2 seconds
