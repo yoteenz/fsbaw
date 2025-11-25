@@ -308,7 +308,7 @@ export default function BuildAWigPage() {
       setTimeout(() => {
         isLoadingFromStorage.current = false;
       }, 100);
-    } else if (isMainPage) {
+    } else if (isMainPage || isEditPage) {
       // Set flag to prevent sync effect from overwriting
       isLoadingFromStorage.current = true;
       
