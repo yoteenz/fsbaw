@@ -26,9 +26,11 @@ export default function BuildAWigPage() {
   const [routeKey, setRouteKey] = useState(location.pathname);
   
   const [customization, setCustomization] = useState<WigCustomization>(() => {
+    // Use location.pathname from React Router
     // Check if we're in edit mode or customize mode
-    const isEditMode = window.location.pathname === '/build-a-wig/edit';
-    const isCustomizeMode = window.location.pathname === '/build-a-wig/noir/customize';
+    const currentPath = location.pathname;
+    const isEditMode = currentPath === '/build-a-wig/edit';
+    const isCustomizeMode = currentPath === '/build-a-wig/noir/customize';
     
     // If in customize mode, load cap size with defaults
     if (isCustomizeMode) {
