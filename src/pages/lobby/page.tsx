@@ -404,39 +404,53 @@ const LobbyApp: React.FC = () => {
             top: '50%',
             transform: 'translateY(-50%)',
             zIndex: 999999,
-            background: '#ffffff !important',
-            border: '3px solid #000000 !important',
-            borderRadius: '50%',
-            width: '70px',
-            height: '70px',
-            minWidth: '70px',
-            minHeight: '70px',
+            background: 'transparent',
+            border: 'none',
             cursor: isTransitioning ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#000000 !important',
-            fontSize: '32px',
-            fontWeight: 'bold',
+            padding: '10px',
             transition: 'all 0.3s ease',
             opacity: isTransitioning ? 0.5 : 1,
-            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.5)',
             pointerEvents: 'auto',
             WebkitTapHighlightColor: 'transparent',
             touchAction: 'manipulation'
           }}
           onMouseEnter={(e) => {
             if (!isTransitioning) {
-              e.currentTarget.style.background = '#f0f0f0';
-              e.currentTarget.style.transform = 'translateY(-50%) scale(1.15)';
+              e.currentTarget.style.opacity = '0.8';
+              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
             }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#ffffff';
+            e.currentTarget.style.opacity = '1';
             e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
           }}
         >
-          ←
+          <svg 
+            width="32" 
+            height="24" 
+            viewBox="0 0 32 24" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' }}
+          >
+            <path 
+              d="M18 18L12 12L18 6" 
+              stroke="white" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path 
+              d="M26 18L20 12L26 6" 
+              stroke="white" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       )}
 
@@ -456,39 +470,53 @@ const LobbyApp: React.FC = () => {
             top: '50%',
             transform: 'translateY(-50%)',
             zIndex: 999999,
-            background: '#ffffff !important',
-            border: '3px solid #000000 !important',
-            borderRadius: '50%',
-            width: '70px',
-            height: '70px',
-            minWidth: '70px',
-            minHeight: '70px',
+            background: 'transparent',
+            border: 'none',
             cursor: isTransitioning ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#000000 !important',
-            fontSize: '32px',
-            fontWeight: 'bold',
+            padding: '10px',
             transition: 'all 0.3s ease',
             opacity: isTransitioning ? 0.5 : 1,
-            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.5)',
             pointerEvents: 'auto',
             WebkitTapHighlightColor: 'transparent',
             touchAction: 'manipulation'
           }}
           onMouseEnter={(e) => {
             if (!isTransitioning) {
-              e.currentTarget.style.background = '#f0f0f0';
-              e.currentTarget.style.transform = 'translateY(-50%) scale(1.15)';
+              e.currentTarget.style.opacity = '0.8';
+              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
             }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#ffffff';
+            e.currentTarget.style.opacity = '1';
             e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
           }}
         >
-          →
+          <svg 
+            width="32" 
+            height="24" 
+            viewBox="0 0 32 24" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' }}
+          >
+            <path 
+              d="M14 18L20 12L14 6" 
+              stroke="white" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path 
+              d="M6 18L12 12L6 6" 
+              stroke="white" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       )}
     </div>
