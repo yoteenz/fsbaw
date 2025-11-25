@@ -397,8 +397,16 @@ export default function BuildAWigPage() {
       const isDifferentItem = editingCartItemId && editingCartItemId !== currentEditingItemIdRef.current;
       
       // If coming from sub-page, load updated values from localStorage
-      if (comingFromSubPage && editingCartItemId && editingCartItemId === currentEditingItemIdRef.current) {
-        console.log('BuildAWigPage - Edit mode: Returning from sub-page, loading updated values from localStorage');
+      // CRITICAL: Check if we're in edit mode AND either the item ID matches OR we don't have a current item ID yet
+      if (comingFromSubPage && editingCartItemId && (editingCartItemId === currentEditingItemIdRef.current || !currentEditingItemIdRef.current)) {
+        console.log('BuildAWigPage - Edit mode: Returning from sub-page, loading updated values from localStorage', {
+          editingCartItemId,
+          currentEditingItemIdRef: currentEditingItemIdRef.current,
+          comingFromSubPage
+        });
+        
+        // Set flag to prevent sync effect from overwriting
+        isLoadingFromStorage.current = true;
         
         // Load updated values from localStorage (set by sub-pages)
         const savedCapSize = localStorage.getItem('selectedCapSize');
@@ -410,6 +418,18 @@ export default function BuildAWigPage() {
         const savedHairline = localStorage.getItem('selectedHairline');
         const savedStyling = localStorage.getItem('selectedStyling');
         const savedAddOns = localStorage.getItem('selectedAddOns');
+        
+        console.log('BuildAWigPage - Edit mode: Loaded values from localStorage:', {
+          savedCapSize,
+          savedLength,
+          savedDensity,
+          savedLace,
+          savedTexture,
+          savedColor,
+          savedHairline,
+          savedStyling,
+          savedAddOns
+        });
         
         if (savedCapSize || savedLength || savedDensity || savedLace || savedTexture || savedColor || savedHairline || savedStyling || savedAddOns) {
       // CRITICAL: Ensure styling is not a part selection (MIDDLE, LEFT, RIGHT) - it should be NONE or a valid styling option
@@ -430,6 +450,8 @@ export default function BuildAWigPage() {
         styling: validStyling,
         addOns: savedAddOns ? JSON.parse(savedAddOns) : [],
           };
+          
+          console.log('BuildAWigPage - Edit mode: Setting customization state with updated values:', updatedCustomization);
           
           // Update customization state (originalItem stays the same for change detection)
           setCustomization(updatedCustomization);
@@ -479,6 +501,11 @@ export default function BuildAWigPage() {
         
         // Clear the flag
         sessionStorage.removeItem('comingFromSubPage');
+        
+        // Clear loading flag after a short delay
+        setTimeout(() => {
+          isLoadingFromStorage.current = false;
+        }, 100);
       } else if (editingCartItem && (isDifferentItem || !currentEditingItemIdRef.current)) {
         // First load or different item: load from editingCartItem
         try {
