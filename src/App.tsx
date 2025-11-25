@@ -135,11 +135,11 @@ function App() {
             <AdminReviews />
           </Suspense>
         } />
-        {/* Build-a-wig routes */}
-        <Route path="/build-a-wig" element={<BuildAWigPageWrapper />} />
+        {/* Build-a-wig routes - specific routes must come before general /build-a-wig route */}
         <Route path="/build-a-wig/edit" element={<BuildAWigPage />} />
         <Route path="/build-a-wig/noir/customize" element={<BuildAWigPage />} />
         <Route path="/build-a-wig/length" element={<LengthPage />} />
+        <Route path="/build-a-wig" element={<BuildAWigPageWrapper />} />
         <Route path="/build-a-wig/color" element={<ColorPage />} />
         <Route path="/build-a-wig/density" element={<DensityPage />} />
         <Route path="/build-a-wig/lace" element={<LacePage />} />
