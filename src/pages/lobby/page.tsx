@@ -447,7 +447,7 @@ const LobbyApp: React.FC = () => {
             <path 
               d="M26 18L20 12L26 6" 
               stroke="white" 
-              strokeWidth="2.5" 
+              strokeWidth="1.5" 
               strokeLinecap="square" 
               strokeLinejoin="miter"
             />
@@ -513,7 +513,7 @@ const LobbyApp: React.FC = () => {
             <path 
               d="M6 18L12 12L6 6" 
               stroke="white" 
-              strokeWidth="2.5" 
+              strokeWidth="1.5" 
               strokeLinecap="square" 
               strokeLinejoin="miter"
             />
