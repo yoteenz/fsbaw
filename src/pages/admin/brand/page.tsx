@@ -14,24 +14,6 @@ export default function AdminBrand() {
 
   return (
     <>
-      {/* Debug: Always show a test div - HIGHEST PRIORITY */}
-      <div style={{
-        position: 'fixed', 
-        top: '80px', 
-        left: 0, 
-        right: 0,
-        background: 'red', 
-        color: 'white', 
-        padding: '30px', 
-        zIndex: 999999,
-        fontSize: '32px',
-        textAlign: 'center',
-        fontWeight: 'bold',
-        borderTop: '5px solid white',
-        borderBottom: '5px solid white'
-      }}>
-        🔴🔴🔴 ADMIN BRAND COMPONENT IS RENDERING! 🔴🔴🔴
-      </div>
     <div className="min-h-screen" style={{ position: 'relative' }}>
       {/* Fixed Background Layer */}
       <div 
