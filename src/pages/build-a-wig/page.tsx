@@ -1490,8 +1490,9 @@ export default function BuildAWigPage() {
     
     // Store the source route so sub-pages know where to navigate back to
     const sourceRoute = location.pathname; // Will be '/build-a-wig', '/build-a-wig/edit', or '/build-a-wig/noir/customize'
+    console.log('BuildAWigPage - Setting sourceRoute before navigating to sub-page:', sourceRoute, 'category:', category);
     sessionStorage.setItem('sourceRoute', sourceRoute);
-    sessionStorage.setItem('comingFromSubPage', 'true');
+    // Don't set comingFromSubPage here - that should only be set when RETURNING from sub-page
     
     if (category === 'capSize') {
       navigate('/build-a-wig/cap-size');

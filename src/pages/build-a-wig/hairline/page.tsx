@@ -183,6 +183,8 @@ function HairlineSelection() {
     // Get the source route from sessionStorage (set by main page when navigating to sub-page)
     const sourceRoute = sessionStorage.getItem('sourceRoute') || '/build-a-wig';
     
+    console.log('Hairline page - Navigating back to source route:', sourceRoute);
+    
     // Set flag to indicate we're returning from a sub-page
     sessionStorage.setItem('comingFromSubPage', 'true');
     
