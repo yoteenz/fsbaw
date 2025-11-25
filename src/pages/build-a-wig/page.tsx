@@ -253,6 +253,8 @@ export default function BuildAWigPage() {
       
       // Load from editingCartItem for edit mode
       const editingCartItem = localStorage.getItem('editingCartItem');
+      const editingCartItemId = localStorage.getItem('editingCartItemId');
+      
       if (editingCartItem) {
         try {
           const item = JSON.parse(editingCartItem);
@@ -281,6 +283,11 @@ export default function BuildAWigPage() {
           setOriginalItem(editCustomization);
           setHasChanges(false);
           
+          // Update current editing item ID
+          if (editingCartItemId) {
+            setCurrentEditingItemId(editingCartItemId);
+          }
+          
           // Set button to 'added' (IN THE BAG) since item is already in cart
           setAddToBagState('added');
           
@@ -308,7 +315,7 @@ export default function BuildAWigPage() {
       setTimeout(() => {
         isLoadingFromStorage.current = false;
       }, 100);
-    } else if (isMainPage || isEditPage) {
+    } else if (isMainPage) {
       // Set flag to prevent sync effect from overwriting
       isLoadingFromStorage.current = true;
       
@@ -354,7 +361,7 @@ export default function BuildAWigPage() {
         isLoadingFromStorage.current = false;
       }, 100);
     }
-  }, [location.pathname, routeKey]); // Run when route changes
+  }, [location.pathname, routeKey, currentEditingItemId]); // Run when route changes or editing item changes
   
   // Listen for storage changes (when sub-pages update localStorage)
   useEffect(() => {
@@ -470,6 +477,7 @@ export default function BuildAWigPage() {
   // Edit mode state: track original item and detect changes
   const [originalItem, setOriginalItem] = useState<WigCustomization | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [currentEditingItemId, setCurrentEditingItemId] = useState<string | null>(null);
   
   // Cart count state
   const [cartCount, setCartCount] = useState(() => {

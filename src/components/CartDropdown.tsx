@@ -642,6 +642,9 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
                             addOns: item.addOns
                           });
                           
+                          // Dispatch custom event to notify edit page of item change
+                          window.dispatchEvent(new CustomEvent('editingCartItemChanged', { detail: { itemId: item.id } }));
+                          
                           onClose(); // Close the dropdown first
                           navigate('/build-a-wig/edit'); // Navigate to build-a-wig edit page
                         }}
