@@ -900,28 +900,95 @@ export default function BuildAWigPage() {
         // Compare updatedCustomization with originalItem immediately (originalItem is in closure)
         // The change detection useEffect will also run when customization state updates, but this ensures it happens
         // Note: originalItem and hasChanges are defined later in the component
-        if (originalItem) {
+        // CRITICAL: originalItem should be set from initial load, but if it's not, we need to ensure it's set
+        if (!originalItem) {
+          console.warn('BuildAWigPage - Edit mode: originalItem is null when returning from sub-page, this should not happen');
+          // Try to get originalItem from the editingCartItem
+          const editingCartItem = localStorage.getItem('editingCartItem');
+          if (editingCartItem) {
+            try {
+              const item = JSON.parse(editingCartItem);
+              const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
+              let validStyling = item.styling || 'NONE';
+              if (partSelectionOptions.includes(validStyling)) {
+                validStyling = 'NONE';
+              }
+              const restoredOriginalItem = {
+                capSize: item.capSize || 'M',
+                length: item.length || '24"',
+                density: item.density || '200%',
+                lace: item.lace || '13X6',
+                texture: item.texture || 'SILKY',
+                color: item.color || 'OFF BLACK',
+                hairline: item.hairline || 'NATURAL',
+                styling: validStyling,
+                addOns: item.addOns || [],
+              };
+              setOriginalItem(restoredOriginalItem);
+              console.log('BuildAWigPage - Edit mode: Restored originalItem from editingCartItem');
+            } catch (e) {
+              console.error('BuildAWigPage - Edit mode: Failed to parse editingCartItem', e);
+            }
+          }
+        }
+        
+        // Now check for changes (originalItem should be set now)
+        const currentOriginalItem = originalItem || (() => {
+          // Fallback: try to get from state or localStorage
+          const editingCartItem = localStorage.getItem('editingCartItem');
+          if (editingCartItem) {
+            try {
+              const item = JSON.parse(editingCartItem);
+              const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
+              let validStyling = item.styling || 'NONE';
+              if (partSelectionOptions.includes(validStyling)) {
+                validStyling = 'NONE';
+              }
+              return {
+                capSize: item.capSize || 'M',
+                length: item.length || '24"',
+                density: item.density || '200%',
+                lace: item.lace || '13X6',
+                texture: item.texture || 'SILKY',
+                color: item.color || 'OFF BLACK',
+                hairline: item.hairline || 'NATURAL',
+                styling: validStyling,
+                addOns: item.addOns || [],
+              };
+            } catch (e) {
+              return null;
+            }
+          }
+          return null;
+        })();
+        
+        if (currentOriginalItem) {
           const hasChangesDetected = 
-            updatedCustomization.capSize !== originalItem.capSize ||
-            updatedCustomization.length !== originalItem.length ||
-            updatedCustomization.density !== originalItem.density ||
-            updatedCustomization.lace !== originalItem.lace ||
-            updatedCustomization.texture !== originalItem.texture ||
-            updatedCustomization.color !== originalItem.color ||
-            updatedCustomization.hairline !== originalItem.hairline ||
-            updatedCustomization.styling !== originalItem.styling ||
-            JSON.stringify(updatedCustomization.addOns) !== JSON.stringify(originalItem.addOns);
+            updatedCustomization.capSize !== currentOriginalItem.capSize ||
+            updatedCustomization.length !== currentOriginalItem.length ||
+            updatedCustomization.density !== currentOriginalItem.density ||
+            updatedCustomization.lace !== currentOriginalItem.lace ||
+            updatedCustomization.texture !== currentOriginalItem.texture ||
+            updatedCustomization.color !== currentOriginalItem.color ||
+            updatedCustomization.hairline !== currentOriginalItem.hairline ||
+            updatedCustomization.styling !== currentOriginalItem.styling ||
+            JSON.stringify(updatedCustomization.addOns) !== JSON.stringify(currentOriginalItem.addOns);
           
           console.log('BuildAWigPage - Edit mode: Change detection after returning from sub-page:', {
             hasChangesDetected,
             updatedColor: updatedCustomization.color,
-            originalColor: originalItem.color,
+            originalColor: currentOriginalItem.color,
             updatedLength: updatedCustomization.length,
-            originalLength: originalItem.length
+            originalLength: currentOriginalItem.length,
+            originalItemExists: !!originalItem
           });
           
           // Set hasChanges immediately - the useEffect will also run but this ensures it's set
           setHasChanges(hasChangesDetected);
+        } else {
+          console.warn('BuildAWigPage - Edit mode: Cannot detect changes - originalItem is not available');
+          // If we can't compare, assume there are changes if we're returning from sub-page
+          setHasChanges(true);
         }
         
         // Clear loading flag after a short delay to allow state updates to propagate
@@ -2354,6 +2421,12 @@ export default function BuildAWigPage() {
   // Detect changes in edit mode by comparing with original item
   useEffect(() => {
     const isEditPage = location.pathname === '/build-a-wig/edit';
+    
+    // Skip change detection if we're currently loading from localStorage (to avoid overwriting hasChanges set by route change effect)
+    if (isLoadingFromStorage.current) {
+      console.log('BuildAWigPage - Change detection: Skipping (loading from storage)');
+      return;
+    }
     
     if (isEditPage && originalItem) {
       // Compare current customization with original item
