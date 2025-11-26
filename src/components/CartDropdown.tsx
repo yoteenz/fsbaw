@@ -130,67 +130,27 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
           const items = JSON.parse(storedItems);
           console.log('CartDropdown - Parsed cart items:', items);
           
-          // Recalculate prices for all cart items to ensure accuracy
-          const recalculatedItems = items.map((item: any) => {
+          // CRITICAL: Use the SAVED PRICE from each item, don't recalculate
+          // Each item already has its correct price saved when it was added to cart
+          // Recalculating would use current localStorage values, causing all items to show the same price
+          const itemsWithCorrectPrices = items.map((item: any) => {
             if (item.name === 'NOIR') {
-              // Calculate correct price based on ALL customization options
-              let basePrice = 740; // Default for standard caps (XS, S, M, L)
-              if (item.capSize === 'XXS/XS/S' || item.capSize === 'S/M/L') {
-                basePrice = 780; // Flexible cap options cost $40 extra
-              }
-              
-              // Calculate color price from color name
-              let colorPrice = 0;
-              if (item.color && item.color !== 'OFF BLACK') {
-                colorPrice = getColorPrice(item.color);
-                
-                // Add extra $40 for lengths over 30" (excluding OFF BLACK)
-                if (item.length && ['30"', '32"', '34"', '36"', '40"'].includes(item.length)) {
-                  colorPrice += 40;
-                }
-              }
-              
-              // CRITICAL: Use the SAVED PRICES from localStorage instead of recalculating
-              // This ensures cart prices match the build-a-wig page prices exactly
-              // Use 'selected*' keys for build-a-wig page, 'customizeSelected*' for customize page
-              const lengthPrice = parseFloat(localStorage.getItem('selectedLengthPrice') || localStorage.getItem('customizeSelectedLengthPrice') || '0');
-              const densityPrice = parseFloat(localStorage.getItem('selectedDensityPrice') || localStorage.getItem('customizeSelectedDensityPrice') || '0');
-              const lacePrice = parseFloat(localStorage.getItem('selectedLacePrice') || localStorage.getItem('customizeSelectedLacePrice') || '0');
-              const texturePrice = parseFloat(localStorage.getItem('selectedTexturePrice') || localStorage.getItem('customizeSelectedTexturePrice') || '0');
-              const hairlinePrice = parseFloat(localStorage.getItem('selectedHairlinePrice') || localStorage.getItem('customizeSelectedHairlinePrice') || '0');
-              const stylingPrice = parseFloat(localStorage.getItem('selectedStylingPrice') || localStorage.getItem('customizeSelectedStylingPrice') || '0');
-              const addOnsPrice = parseFloat(localStorage.getItem('selectedAddOnsPrice') || localStorage.getItem('customizeSelectedAddOnsPrice') || '0');
-              
-              const calculatedPrice = basePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
-              
-              console.log('CartDropdown - Recalculated price for item:', {
+              // Use the price that was saved when the item was added to cart
+              // This ensures each item shows its own unique price based on its selections
+              console.log('CartDropdown - Using saved price for item:', {
                 itemId: item.id,
                 capSize: item.capSize,
                 color: item.color,
-                lace: item.lace,
-                addOns: item.addOns,
-                storedPrice: item.price,
-                calculatedPrice,
-                breakdown: {
-                  basePrice,
-                  colorPrice,
-                  lengthPrice,
-                  densityPrice,
-                  lacePrice,
-                  texturePrice,
-                  hairlinePrice,
-                  stylingPrice,
-                  addOnsPrice
-                }
+                storedPrice: item.price
               });
               
-              return { ...item, price: calculatedPrice };
+              return { ...item, price: item.price || 740 }; // Fallback to base price if missing
             }
             return item;
           });
           
-          console.log('CartDropdown - Loading cart items with recalculated prices:', recalculatedItems);
-          setCartItems(recalculatedItems);
+          console.log('CartDropdown - Loading cart items with saved prices:', itemsWithCorrectPrices);
+          setCartItems(itemsWithCorrectPrices);
         } else {
           // Generate mock cart items based on cart count
           const actualPrice = calculateActualPrice();
