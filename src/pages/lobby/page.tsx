@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LoadingScreen from '../../components/base/LoadingScreen';
 
 // Lobby Component
 const LobbyPage: React.FC = () => {
@@ -510,6 +511,7 @@ const LobbyApp: React.FC = () => {
   console.log('🎯 LOBBY PAGE LOADING - This should show when visiting root path');
   const [currentPage, setCurrentPage] = useState<number>(0); // 0 = Lobby, 1 = Lounge
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [showLoading, setShowLoading] = useState<boolean>(true);
 
   const pages = [<LobbyPage key="lobby" />, <LoungePage key="lounge" />];
 
@@ -570,6 +572,14 @@ const LobbyApp: React.FC = () => {
     };
   }, [currentPage, isTransitioning, pages.length]);
 
+  // Hide loading screen after assets have time to load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoading(false);
+    }, 3000); // 3 seconds to allow assets to fully render
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div style={{ 
       width: '100vw', 
@@ -581,6 +591,7 @@ const LobbyApp: React.FC = () => {
       WebkitOverflowScrolling: 'touch',
       scrollBehavior: 'auto'
     }}>
+      {showLoading && <LoadingScreen />}
       {/* Slide Container */}
       <div 
         style={{
