@@ -326,18 +326,33 @@ function NoirSelection() {
             return;
           }
           
-        // Check if the specific item that was added is still in cart
-        const lastAddedItemId = localStorage.getItem('lastAddedItemId');
+          // Re-validate that a cart item with default configuration still exists
+          // This ensures we only show "IN THE BAG" for items with ALL default specs
+          const currentConfig = generateConfigurationStringForChangeDetection();
           const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
           
-        // Check if the specific item ID exists in cart items
-        const itemStillInCart = cartItems.some((item: any) => item.id === lastAddedItemId);
-        
-        // Only reset if the specific item is not in cart
-        if (!itemStillInCart) {
+          const matchingItem = cartItems.find((item: any) => {
+            // Ensure item has ALL required properties for default selection options
+            if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
+              return false;
+            }
+            
+            // Normalize cart item values to ensure consistent formatting - remove ALL spaces
+            // Use actual values from cart item (no fallback defaults since we've already verified they exist)
+            // Handle empty addOns consistently - convert empty array to empty string
+            const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
+            const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
+            return normalizedItemConfig === currentConfig;
+          });
+          
+        // Only reset if no item matches the default configuration
+        if (!matchingItem) {
             setAddToBagState('idle');
             localStorage.removeItem('addToBagButtonState');
           localStorage.removeItem('lastAddedItemId');
+          } else {
+            // Update the lastAddedItemId to the matching item
+            localStorage.setItem('lastAddedItemId', matchingItem.id);
           }
         }
     };
@@ -631,9 +646,10 @@ function NoirSelection() {
         }
         
         // Normalize cart item values to ensure consistent formatting - remove ALL spaces
+        // Use actual values from cart item (no fallback defaults since we've already verified they exist)
         // Handle empty addOns consistently - convert empty array to empty string
         const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
-        const normalizedItemConfig = `${(item.capSize || '').toString().replace(/\s+/g, '')}-${(item.length || '24"').toString().replace(/\s+/g, '')}-${(item.density || '').toString().replace(/\s+/g, '')}-${(item.lace || '').toString().replace(/\s+/g, '')}-${(item.texture || '').toString().replace(/\s+/g, '')}-${(item.color || '').toString().replace(/\s+/g, '')}-${(item.hairline || '').toString().replace(/\s+/g, '')}-${(item.styling || '').toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
+        const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
         return normalizedItemConfig === newConfig;
       });
       
@@ -666,9 +682,10 @@ function NoirSelection() {
       }
       
       // Normalize cart item values to ensure consistent formatting - remove ALL spaces
+      // Use actual values from cart item (no fallback defaults since we've already verified they exist)
       // Handle empty addOns consistently - convert empty array to empty string
       const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
-      const normalizedItemConfig = `${(item.capSize || '').toString().replace(/\s+/g, '')}-${(item.length || '24"').toString().replace(/\s+/g, '')}-${(item.density || '').toString().replace(/\s+/g, '')}-${(item.lace || '').toString().replace(/\s+/g, '')}-${(item.texture || '').toString().replace(/\s+/g, '')}-${(item.color || '').toString().replace(/\s+/g, '')}-${(item.hairline || '').toString().replace(/\s+/g, '')}-${(item.styling || '').toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
+      const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
       return normalizedItemConfig === currentConfig;
     });
     
@@ -696,8 +713,11 @@ function NoirSelection() {
           return false;
         }
         
+        // Normalize cart item values to ensure consistent formatting - remove ALL spaces
+        // Use actual values from cart item (no fallback defaults since we've already verified they exist)
+        // Handle empty addOns consistently - convert empty array to empty string
         const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
-        const normalizedItemConfig = `${(item.capSize || '').toString().replace(/\s+/g, '')}-${(item.length || '24"').toString().replace(/\s+/g, '')}-${(item.density || '').toString().replace(/\s+/g, '')}-${(item.lace || '').toString().replace(/\s+/g, '')}-${(item.texture || '').toString().replace(/\s+/g, '')}-${(item.color || '').toString().replace(/\s+/g, '')}-${(item.hairline || '').toString().replace(/\s+/g, '')}-${(item.styling || '').toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
+        const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
         return normalizedItemConfig === currentConfig;
       });
       
