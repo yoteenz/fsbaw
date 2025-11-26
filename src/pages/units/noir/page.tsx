@@ -622,8 +622,17 @@ function NoirSelection() {
     const newConfig = generateConfigurationStringForChangeDetection();
     if (currentConfiguration && newConfig !== currentConfiguration) {
       // Check if the new configuration is already in the cart
+      // ONLY check NOIR items with ALL default selection options
       const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
       const matchingItem = cartItems.find((item: any) => {
+        // Only match NOIR items
+        if (item.name !== 'NOIR') return false;
+        
+        // Ensure item has ALL required properties for default selection options
+        if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
+          return false;
+        }
+        
         // Normalize cart item values to ensure consistent formatting - remove ALL spaces
         // Handle empty addOns consistently - convert empty array to empty string
         const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
@@ -652,7 +661,16 @@ function NoirSelection() {
     const currentConfig = generateConfigurationStringForChangeDetection();
     
     // Always check if current configuration matches any cart item
+    // ONLY check NOIR items with ALL default selection options
     const matchingItem = cartItems.find((item: any) => {
+      // Only match NOIR items
+      if (item.name !== 'NOIR') return false;
+      
+      // Ensure item has ALL required properties for default selection options
+      if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
+        return false;
+      }
+      
       // Normalize cart item values to ensure consistent formatting - remove ALL spaces
       // Handle empty addOns consistently - convert empty array to empty string
       const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
@@ -677,7 +695,16 @@ function NoirSelection() {
       const currentConfig = generateConfigurationStringForChangeDetection();
       const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
       
+      // ONLY check NOIR items with ALL default selection options
       const matchingItem = cartItems.find((item: any) => {
+        // Only match NOIR items
+        if (item.name !== 'NOIR') return false;
+        
+        // Ensure item has ALL required properties for default selection options
+        if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
+          return false;
+        }
+        
         const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
         const normalizedItemConfig = `${(item.capSize || '').toString().replace(/\s+/g, '')}-${(item.length || '24"').toString().replace(/\s+/g, '')}-${(item.density || '').toString().replace(/\s+/g, '')}-${(item.lace || '').toString().replace(/\s+/g, '')}-${(item.texture || '').toString().replace(/\s+/g, '')}-${(item.color || '').toString().replace(/\s+/g, '')}-${(item.hairline || '').toString().replace(/\s+/g, '')}-${(item.styling || '').toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
         return normalizedItemConfig === currentConfig;
