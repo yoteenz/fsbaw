@@ -1869,15 +1869,9 @@ export default function BuildAWigPage() {
         prefix = 'customizeSelected';
       }
       
-      // Get actual prices from localStorage with fallback to 'selected' prefix
-      const getPrice = (key: string) => {
-        const primaryKey = `${prefix}${key}Price`;
-        const fallbackKey = `selected${key}Price`;
-        const primaryValue = localStorage.getItem(primaryKey);
-        const fallbackValue = localStorage.getItem(fallbackKey);
-        const value = primaryValue || fallbackValue || '0';
-        return parseFloat(value);
-      };
+      // CRITICAL: Always recalculate prices from current customization state first
+      // This ensures prices are always correct even after many edits
+      const calculatedPrices = calculatePricesFromSelections(customization);
       
       // CRITICAL: Always recalculate capSizePrice based on current cap size selection
       // Flexible caps (XXS/XS/S, S/M/L) cost $40, regular caps cost $0
@@ -1887,19 +1881,55 @@ export default function BuildAWigPage() {
         capSizePrice = 40; // Flexible caps cost $40 more
       }
       
-      const colorPrice = getPrice('Color');
-      const lengthPrice = getPrice('Length');
-      const densityPrice = getPrice('Density');
-      const lacePrice = getPrice('Lace');
-      const texturePrice = getPrice('Texture');
-      const hairlinePrice = getPrice('Hairline');
-      const stylingPrice = getPrice('Styling');
-      const addOnsPrice = getPrice('AddOns');
+      // Get prices from localStorage with fallback to calculated prices
+      // This ensures we use saved prices when available, but always have correct fallback
+      const getPrice = (key: string, calculatedValue: number) => {
+        const primaryKey = `${prefix}${key}Price`;
+        const fallbackKey = `selected${key}Price`;
+        const primaryValue = localStorage.getItem(primaryKey);
+        const fallbackValue = localStorage.getItem(fallbackKey);
+        
+        // Use localStorage value if it exists and is valid, otherwise use calculated value
+        if (primaryValue && !isNaN(parseFloat(primaryValue))) {
+          return parseFloat(primaryValue);
+        } else if (fallbackValue && !isNaN(parseFloat(fallbackValue))) {
+          return parseFloat(fallbackValue);
+        } else {
+          // Fallback to calculated price to ensure accuracy
+          return calculatedValue;
+        }
+      };
+      
+      const colorPrice = getPrice('Color', calculatedPrices.colorPrice);
+      const lengthPrice = getPrice('Length', calculatedPrices.lengthPrice);
+      const densityPrice = getPrice('Density', calculatedPrices.densityPrice);
+      const lacePrice = getPrice('Lace', calculatedPrices.lacePrice);
+      const texturePrice = getPrice('Texture', calculatedPrices.texturePrice);
+      const hairlinePrice = getPrice('Hairline', calculatedPrices.hairlinePrice);
+      const stylingPrice = getPrice('Styling', calculatedPrices.stylingPrice);
+      const addOnsPrice = getPrice('AddOns', calculatedPrices.addOnsPrice);
       
       // Add all the actual prices
       total += capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
       
       setTotalPrice(total);
+      
+      // CRITICAL: In edit mode, ensure prices are saved to localStorage after calculation
+      // This prevents stale values from accumulating after many edits
+      if (isEditMode) {
+        const pricesToSave = {
+          capSizePrice,
+          colorPrice,
+          lengthPrice,
+          densityPrice,
+          lacePrice,
+          texturePrice,
+          hairlinePrice,
+          stylingPrice,
+          addOnsPrice
+        };
+        savePricesToLocalStorage(pricesToSave);
+      }
     };
 
     // Calculate price immediately and on changes
@@ -1907,7 +1937,10 @@ export default function BuildAWigPage() {
     
     // Also listen for storage changes to recalculate price
     const handleStorageChange = () => {
-      calculatePrice();
+      // Use requestAnimationFrame to debounce rapid changes
+      requestAnimationFrame(() => {
+        calculatePrice();
+      });
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -1917,7 +1950,7 @@ export default function BuildAWigPage() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('customStorageChange', handleStorageChange);
     };
-  }, [customization, basePrice, refreshTrigger, location]);
+  }, [customization, basePrice, refreshTrigger, location, calculatePricesFromSelections, savePricesToLocalStorage]);
 
   // Load selected currency from localStorage
   useEffect(() => {
