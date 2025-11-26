@@ -230,7 +230,8 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   };
 
   // Helper function to get color price based on color name
-  const getColorPrice = (color: string) => {
+  // @ts-expect-error - Function kept for potential future use
+  const _getColorPrice = (color: string) => {
     const colorPrices: { [key: string]: number } = {
       'JET BLACK': 100,  // Fixed: JET BLACK should be $100, not $0
       'OFF BLACK': 0,    // Only OFF BLACK is free
