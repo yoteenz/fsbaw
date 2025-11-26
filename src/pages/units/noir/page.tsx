@@ -128,6 +128,50 @@ function NoirSelection() {
     return `${normalizedCapSize}-${normalizedLength}-${normalizedDensity}-${normalizedLace}-${normalizedTexture}-${normalizedColor}-${normalizedHairline}-${normalizedStyling}-${normalizedAddOns}`;
   };
 
+  // Helper function to check if a cart item matches the default configuration exactly
+  // This does explicit field-by-field comparison to ensure no false matches
+  const matchesDefaultConfiguration = (item: any): boolean => {
+    // Ensure item has ALL required properties
+    if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
+      return false;
+    }
+    
+    // Get current default configuration values
+    const currentCapSize = selectedCustomCap || selectedFlexibleCap || 'M';
+    const DEFAULT_LENGTH = '24"';
+    const DEFAULT_DENSITY = '200%';
+    const DEFAULT_LACE = '13X6';
+    const DEFAULT_TEXTURE = 'SILKY';
+    const DEFAULT_COLOR = 'OFF BLACK';
+    const DEFAULT_HAIRLINE = 'NATURAL';
+    const DEFAULT_STYLING = 'NONE';
+    const DEFAULT_ADDONS = '';
+    
+    // Normalize values for comparison (remove all spaces and convert to string)
+    const normalize = (value: any): string => {
+      return (value || '').toString().replace(/\s+/g, '').toUpperCase();
+    };
+    
+    // Handle addOns - convert array to comma-separated string or empty string
+    const itemAddOns = item.addOns && Array.isArray(item.addOns) && item.addOns.length > 0 
+      ? item.addOns.join(',').replace(/\s+/g, '').toUpperCase()
+      : '';
+    
+    // Compare each field explicitly - ALL must match exactly
+    const capSizeMatch = normalize(item.capSize) === normalize(currentCapSize);
+    const lengthMatch = normalize(item.length) === normalize(DEFAULT_LENGTH);
+    const densityMatch = normalize(item.density) === normalize(DEFAULT_DENSITY);
+    const laceMatch = normalize(item.lace) === normalize(DEFAULT_LACE);
+    const textureMatch = normalize(item.texture) === normalize(DEFAULT_TEXTURE);
+    const colorMatch = normalize(item.color) === normalize(DEFAULT_COLOR);
+    const hairlineMatch = normalize(item.hairline) === normalize(DEFAULT_HAIRLINE);
+    const stylingMatch = normalize(item.styling) === normalize(DEFAULT_STYLING);
+    const addOnsMatch = itemAddOns === normalize(DEFAULT_ADDONS);
+    
+    // ALL fields must match exactly
+    return capSizeMatch && lengthMatch && densityMatch && laceMatch && textureMatch && colorMatch && hairlineMatch && stylingMatch && addOnsMatch;
+  };
+
 
   // Update existing noir cart items to use new pricing
   useEffect(() => {
@@ -332,17 +376,8 @@ function NoirSelection() {
           const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
           
           const matchingItem = cartItems.find((item: any) => {
-            // Ensure item has ALL required properties for default selection options
-            if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
-              return false;
-            }
-            
-            // Normalize cart item values to ensure consistent formatting - remove ALL spaces
-            // Use actual values from cart item (no fallback defaults since we've already verified they exist)
-            // Handle empty addOns consistently - convert empty array to empty string
-            const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
-            const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
-            return normalizedItemConfig === currentConfig;
+            // Use explicit field-by-field comparison to ensure exact match
+            return matchesDefaultConfiguration(item);
           });
           
         // Only reset if no item matches the default configuration
@@ -640,17 +675,8 @@ function NoirSelection() {
       // Only match items with ALL default selection options (M, 24", 200%, 13X6, etc.)
       const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
       const matchingItem = cartItems.find((item: any) => {
-        // Ensure item has ALL required properties for default selection options
-        if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
-          return false;
-        }
-        
-        // Normalize cart item values to ensure consistent formatting - remove ALL spaces
-        // Use actual values from cart item (no fallback defaults since we've already verified they exist)
-        // Handle empty addOns consistently - convert empty array to empty string
-        const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
-        const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
-        return normalizedItemConfig === newConfig;
+        // Use explicit field-by-field comparison to ensure exact match
+        return matchesDefaultConfiguration(item);
       });
       
       if (matchingItem) {
@@ -676,17 +702,8 @@ function NoirSelection() {
     // Always check if current configuration matches any cart item
     // Only match items with ALL default selection options (M, 24", 200%, 13X6, etc.)
     const matchingItem = cartItems.find((item: any) => {
-      // Ensure item has ALL required properties for default selection options
-      if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
-        return false;
-      }
-      
-      // Normalize cart item values to ensure consistent formatting - remove ALL spaces
-      // Use actual values from cart item (no fallback defaults since we've already verified they exist)
-      // Handle empty addOns consistently - convert empty array to empty string
-      const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
-      const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
-      return normalizedItemConfig === currentConfig;
+      // Use explicit field-by-field comparison to ensure exact match
+      return matchesDefaultConfiguration(item);
     });
     
     if (matchingItem) {
@@ -708,17 +725,8 @@ function NoirSelection() {
       
       // Only match items with ALL default selection options (M, 24", 200%, 13X6, etc.)
       const matchingItem = cartItems.find((item: any) => {
-        // Ensure item has ALL required properties for default selection options
-        if (!item.capSize || !item.length || !item.density || !item.lace || !item.texture || !item.color || !item.hairline || !item.styling) {
-          return false;
-        }
-        
-        // Normalize cart item values to ensure consistent formatting - remove ALL spaces
-        // Use actual values from cart item (no fallback defaults since we've already verified they exist)
-        // Handle empty addOns consistently - convert empty array to empty string
-        const itemAddOns = item.addOns && item.addOns.length > 0 ? item.addOns.join(',') : '';
-        const normalizedItemConfig = `${item.capSize.toString().replace(/\s+/g, '')}-${item.length.toString().replace(/\s+/g, '')}-${item.density.toString().replace(/\s+/g, '')}-${item.lace.toString().replace(/\s+/g, '')}-${item.texture.toString().replace(/\s+/g, '')}-${item.color.toString().replace(/\s+/g, '')}-${item.hairline.toString().replace(/\s+/g, '')}-${item.styling.toString().replace(/\s+/g, '')}-${itemAddOns.replace(/\s+/g, '')}`;
-        return normalizedItemConfig === currentConfig;
+        // Use explicit field-by-field comparison to ensure exact match
+        return matchesDefaultConfiguration(item);
       });
       
       if (matchingItem) {
