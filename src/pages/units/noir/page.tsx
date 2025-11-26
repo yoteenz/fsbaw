@@ -360,34 +360,35 @@ function NoirSelection() {
           return;
         }
         
-        // Only check for reset if button is currently 'added'
-      if (currentButtonState === 'added') {
-          // If cart is completely empty, reset button state
-          if (newCartCount === 0) {
-            setAddToBagState('idle');
-            localStorage.removeItem('addToBagButtonState');
+        // ALWAYS validate cart state - don't trust localStorage alone
+        // If cart is completely empty, reset button state
+        if (newCartCount === 0) {
+          setAddToBagState('idle');
+          localStorage.removeItem('addToBagButtonState');
           localStorage.removeItem('lastAddedItemId');
-            return;
-          }
-          
-          // Re-validate that a cart item with default configuration still exists
-          // This ensures we only show "IN THE BAG" for items with ALL default specs
-          const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-          
-          const matchingItem = cartItems.find((item: any) => {
-            // Use explicit field-by-field comparison to ensure exact match
-            return matchesDefaultConfiguration(item);
-          });
-          
-        // Only reset if no item matches the default configuration
-        if (!matchingItem) {
-            setAddToBagState('idle');
-            localStorage.removeItem('addToBagButtonState');
+          return;
+        }
+        
+        // ALWAYS re-validate that a cart item with default configuration exists
+        // This ensures we only show "IN THE BAG" for items with ALL default specs
+        const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+        
+        const matchingItem = cartItems.find((item: any) => {
+          // Use explicit field-by-field comparison to ensure exact match
+          return matchesDefaultConfiguration(item);
+        });
+        
+        // Update state based on actual cart contents, not localStorage
+        if (matchingItem) {
+          // Item with default configuration exists - set to 'added'
+          setAddToBagState('added');
+          localStorage.setItem('addToBagButtonState', 'added');
+          localStorage.setItem('lastAddedItemId', matchingItem.id);
+        } else {
+          // No matching item - reset to 'idle'
+          setAddToBagState('idle');
+          localStorage.removeItem('addToBagButtonState');
           localStorage.removeItem('lastAddedItemId');
-          } else {
-            // Update the lastAddedItemId to the matching item
-            localStorage.setItem('lastAddedItemId', matchingItem.id);
-          }
         }
     };
 
@@ -409,20 +410,21 @@ function NoirSelection() {
       setRefreshTrigger(prev => prev + 1);
     };
 
+    // CRITICAL: Validate cart state immediately on mount to clear any stale localStorage
+    // This ensures button state is correct even if localStorage was set incorrectly
+    handleCartUpdate();
+    
     // Listen for custom events
     window.addEventListener('cartCountUpdated', handleCartCountUpdate as EventListener);
     window.addEventListener('cartUpdated', handleCartUpdated as EventListener);
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('focus', handleStorageChange);
     
-    // Simple polling that only runs when button is in 'added' state
+    // Simple polling - always validate, not just when localStorage says 'added'
+    // This catches cases where localStorage is wrong
     const interval = setInterval(() => {
-      // Check current button state from localStorage to avoid stale closure
-      const currentButtonState = localStorage.getItem('addToBagButtonState');
-      if (currentButtonState === 'added') {
-        handleCartUpdate();
-      }
-    }, 1000); // Check every 1 second, only when needed
+      handleCartUpdate();
+    }, 1000); // Check every 1 second
     
     return () => {
       clearInterval(interval);
