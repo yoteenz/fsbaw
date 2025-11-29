@@ -241,11 +241,30 @@ function NoirSelection() {
 
       const getHairlinePriceFromItem = (item: any) => {
         const hairline = item.hairline || 'NATURAL';
-        const hairlinePrices: { [key: string]: number } = {
-          'NATURAL': 0,
-          'PREMIUM': 20
-        };
-        return hairlinePrices[hairline] || 0;
+        
+        // CRITICAL: Handle NATURAL, PEAK, LAGOS, and LAGOS+PEAK combination
+        if (!hairline || hairline === 'NATURAL') {
+          return 0;
+        }
+        
+        const hairlineArray = hairline.split(',').map((h: string) => h.trim());
+        let total = 0;
+        
+        hairlineArray.forEach((h: string) => {
+          const hairlinePrices: { [key: string]: number } = {
+            'NATURAL': 0,
+            'PEAK': 40,
+            'LAGOS': 60
+          };
+          total += hairlinePrices[h] || 0;
+        });
+        
+        // Apply $20 discount to Lagos when combined with Peak
+        if (hairlineArray.includes('LAGOS') && hairlineArray.includes('PEAK')) {
+          total -= 20;
+        }
+        
+        return total;
       };
 
       const getStylingPriceFromItem = (item: any) => {
@@ -253,9 +272,9 @@ function NoirSelection() {
         const stylingPrices: { [key: string]: number } = {
           'NONE': 0,
           'BANGS': 40,
-          'CRIMPS': 60,
-          'FLAT IRON': 60,
-          'LAYERS': 60
+          'CRIMPS': 140,
+          'FLAT IRON': 100,
+          'LAYERS': 180
         };
         return stylingPrices[styling] || 0;
       };

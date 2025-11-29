@@ -578,29 +578,53 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
                           localStorage.setItem('editingCartItem', JSON.stringify(item));
                           localStorage.setItem('editingCartItemId', item.id);
                           
-                          // Store individual customization options
-                          localStorage.setItem('selectedCapSize', item.capSize || 'M');
-                          localStorage.setItem('selectedLength', item.length || '24"');
-                          localStorage.setItem('selectedDensity', item.density || '200%');
-                          localStorage.setItem('selectedColor', item.color || 'OFF BLACK');
-                          localStorage.setItem('selectedTexture', item.texture || 'SILKY');
-                          localStorage.setItem('selectedLace', item.lace || '13X6');
-                          localStorage.setItem('selectedHairline', item.hairline || 'NATURAL');
-                          localStorage.setItem('selectedPartSelection', item.partSelection || 'MIDDLE');
-                          localStorage.setItem('selectedStyling', item.styling || 'NONE');
-                          localStorage.setItem('selectedAddOns', JSON.stringify(item.addOns || []));
+                          // CRITICAL: Store individual customization options with BOTH selected* and editSelected* prefixes
+                          // This ensures consistency when loading edit mode
+                          const capSize = item.capSize || 'M';
+                          const length = item.length || '24"';
+                          const density = item.density || '200%';
+                          const color = item.color || 'OFF BLACK';
+                          const texture = item.texture || 'SILKY';
+                          const lace = item.lace || '13X6';
+                          const hairline = item.hairline || 'NATURAL';
+                          const partSelection = item.partSelection || 'MIDDLE';
+                          const styling = item.styling || 'NONE';
+                          const addOns = item.addOns || [];
+                          
+                          // Store with selected* prefix (for sub-pages)
+                          localStorage.setItem('selectedCapSize', capSize);
+                          localStorage.setItem('selectedLength', length);
+                          localStorage.setItem('selectedDensity', density);
+                          localStorage.setItem('selectedColor', color);
+                          localStorage.setItem('selectedTexture', texture);
+                          localStorage.setItem('selectedLace', lace);
+                          localStorage.setItem('selectedHairline', hairline);
+                          localStorage.setItem('selectedPartSelection', partSelection);
+                          localStorage.setItem('selectedStyling', styling);
+                          localStorage.setItem('selectedAddOns', JSON.stringify(addOns));
+                          
+                          // CRITICAL: Also store with editSelected* prefix (for edit mode sub-pages)
+                          localStorage.setItem('editSelectedCapSize', capSize);
+                          localStorage.setItem('editSelectedLength', length);
+                          localStorage.setItem('editSelectedDensity', density);
+                          localStorage.setItem('editSelectedColor', color);
+                          localStorage.setItem('editSelectedTexture', texture);
+                          localStorage.setItem('editSelectedLace', lace);
+                          localStorage.setItem('editSelectedHairline', hairline);
+                          localStorage.setItem('editSelectedStyling', styling);
+                          localStorage.setItem('editSelectedAddOns', JSON.stringify(addOns));
                           
                           console.log('Stored localStorage values:', {
-                            capSize: item.capSize,
-                            length: item.length,
-                            density: item.density,
-                            color: item.color,
-                            texture: item.texture,
-                            lace: item.lace,
-                            hairline: item.hairline,
-                            partSelection: item.partSelection,
-                            styling: item.styling,
-                            addOns: item.addOns
+                            capSize,
+                            length,
+                            density,
+                            color,
+                            texture,
+                            lace,
+                            hairline,
+                            partSelection,
+                            styling,
+                            addOns
                           });
                           
                           // Dispatch custom event to notify edit page of item change

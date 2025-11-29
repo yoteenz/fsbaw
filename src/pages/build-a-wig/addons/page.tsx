@@ -9,6 +9,47 @@ export default function AddOnsSelectionPage() {
   const navigate = useNavigate();
   const [selectedView, setSelectedView] = useState(1);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedAddOns = localStorage.getItem('editSelectedAddOns');
+      if (editSelectedAddOns) {
+        try {
+          return JSON.parse(editSelectedAddOns);
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          if (item.addOns && Array.isArray(item.addOns)) {
+            return item.addOns;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedAddOns = localStorage.getItem('customizeSelectedAddOns');
+      if (customizeSelectedAddOns) {
+        try {
+          return JSON.parse(customizeSelectedAddOns);
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // Main mode: use selected* keys
     const saved = localStorage.getItem('selectedAddOns');
     return saved ? JSON.parse(saved) : [];
   });

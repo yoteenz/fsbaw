@@ -496,28 +496,50 @@ function DensitySelection() {
     const isOnEditRoute = window.location.pathname.includes('/edit');
     const editingCartItem = localStorage.getItem('editingCartItem');
     
-    // If we're editing, load from edit data
-    if (isOnEditRoute && editingCartItem) {
-      try {
-        const item = JSON.parse(editingCartItem);
-        console.log('Density page - loading edit mode density:', item.density);
-        if (item.density) {
-          setSelectedDensity(item.density);
-          localStorage.setItem('selectedDensity', item.density);
-          return; // Exit early - we're done
+    const isOnCustomizeRoute = window.location.pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedDensity = localStorage.getItem('editSelectedDensity');
+      if (editSelectedDensity) {
+        console.log('Density page - loading edit mode density from editSelectedDensity:', editSelectedDensity);
+        setSelectedDensity(editSelectedDensity);
+        // Also save to selected* for consistency
+        localStorage.setItem('selectedDensity', editSelectedDensity);
+        return; // Exit early - we're done
+      }
+      
+      // Fallback to editingCartItem
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          console.log('Density page - loading edit mode density from editingCartItem:', item.density);
+          if (item.density) {
+            setSelectedDensity(item.density);
+            localStorage.setItem('selectedDensity', item.density);
+            // Also save to editSelected* for consistency
+            localStorage.setItem('editSelectedDensity', item.density);
+            return; // Exit early - we're done
+          }
+        } catch (error) {
+          console.error('Density page - Error parsing editingCartItem:', error);
         }
-      } catch (error) {
-        console.error('Density page - Error parsing editingCartItem:', error);
       }
     }
     
-    // NOT editing - load from main page's selectedDensity
-    // CRITICAL: Clear any stale edit data first
-    if (!isOnEditRoute && editingCartItem) {
-      console.log('Density page - NOT editing, clearing stale edit data');
-      // Don't clear editingCartItem (edit page needs it), but ensure we use selectedDensity
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedDensity = localStorage.getItem('customizeSelectedDensity');
+      if (customizeSelectedDensity) {
+        console.log('Density page - loading customize mode density from customizeSelectedDensity:', customizeSelectedDensity);
+        setSelectedDensity(customizeSelectedDensity);
+        // Also save to selected* for consistency
+        localStorage.setItem('selectedDensity', customizeSelectedDensity);
+        return; // Exit early - we're done
+      }
     }
     
+    // Main mode - load from main page's selectedDensity
     const currentDensity = localStorage.getItem('selectedDensity');
     console.log('Density page - useEffect loading from localStorage:', currentDensity, 'isOnEditRoute:', isOnEditRoute);
     
@@ -535,13 +557,21 @@ function DensitySelection() {
     
     // Also listen for customStorageChange event in case main page updates after mount
     const handleCustomStorageChange = () => {
-      // Only update if NOT editing
-      if (!window.location.pathname.includes('/edit')) {
-        const currentDensity = localStorage.getItem('selectedDensity');
-        if (currentDensity) {
-          console.log('Density page - Updated from customStorageChange:', currentDensity);
-          setSelectedDensity(currentDensity);
-        }
+      const pathname = window.location.pathname;
+      const isOnEditRoute = pathname.includes('/edit');
+      const isOnCustomizeRoute = pathname.includes('/noir/customize');
+      
+      let currentDensity: string | null = null;
+      if (isOnEditRoute) {
+        currentDensity = localStorage.getItem('editSelectedDensity') || localStorage.getItem('selectedDensity');
+      } else if (isOnCustomizeRoute) {
+        currentDensity = localStorage.getItem('customizeSelectedDensity') || localStorage.getItem('selectedDensity');
+      } else {
+        currentDensity = localStorage.getItem('selectedDensity');
+      }
+      if (currentDensity) {
+        console.log('Density page - Updated from customStorageChange:', currentDensity);
+        setSelectedDensity(currentDensity);
       }
     };
     
@@ -556,7 +586,19 @@ function DensitySelection() {
   useEffect(() => {
     const handleStorageChange = () => {
       // Update density from localStorage
-      const currentDensity = localStorage.getItem('selectedDensity');
+      // CRITICAL: Check editSelected* keys first when in edit mode, then customizeSelected* for customize mode
+      const pathname = window.location.pathname;
+      const isOnEditRoute = pathname.includes('/edit');
+      const isOnCustomizeRoute = pathname.includes('/noir/customize');
+      
+      let currentDensity: string | null = null;
+      if (isOnEditRoute) {
+        currentDensity = localStorage.getItem('editSelectedDensity') || localStorage.getItem('selectedDensity');
+      } else if (isOnCustomizeRoute) {
+        currentDensity = localStorage.getItem('customizeSelectedDensity') || localStorage.getItem('selectedDensity');
+      } else {
+        currentDensity = localStorage.getItem('selectedDensity');
+      }
       if (currentDensity) {
         setSelectedDensity(currentDensity);
       }

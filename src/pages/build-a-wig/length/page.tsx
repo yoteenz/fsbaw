@@ -69,33 +69,53 @@ function LengthSelection() {
 
   // Initialize with current selection from localStorage
   useEffect(() => {
-    // CRITICAL: Check if we're ACTUALLY editing (not just stale edit data)
-    // Only load from editingCartItem if we're on the edit route
-    const isOnEditRoute = window.location.pathname.includes('/edit');
-    const editingCartItem = localStorage.getItem('editingCartItem');
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
     
-    // If we're editing, load from edit data
-    if (isOnEditRoute && editingCartItem) {
-      try {
-        const item = JSON.parse(editingCartItem);
-        console.log('Length page - loading edit mode length:', item.length);
-        if (item.length) {
-          setSelectedLength(item.length);
-          localStorage.setItem('selectedLength', item.length);
-          return; // Exit early - we're done
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedLength = localStorage.getItem('editSelectedLength');
+      if (editSelectedLength) {
+        console.log('Length page - loading edit mode length from editSelectedLength:', editSelectedLength);
+        setSelectedLength(editSelectedLength);
+        // Also save to selected* for consistency
+        localStorage.setItem('selectedLength', editSelectedLength);
+        return; // Exit early - we're done
+      }
+      
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          console.log('Length page - loading edit mode length from editingCartItem:', item.length);
+          if (item.length) {
+            setSelectedLength(item.length);
+            localStorage.setItem('selectedLength', item.length);
+            // Also save to editSelected* for consistency
+            localStorage.setItem('editSelectedLength', item.length);
+            return; // Exit early - we're done
+          }
+        } catch (error) {
+          console.error('Length page - Error parsing editingCartItem:', error);
         }
-      } catch (error) {
-        console.error('Length page - Error parsing editingCartItem:', error);
       }
     }
     
-    // NOT editing - load from main page's selectedLength
-    // CRITICAL: Clear any stale edit data first
-    if (!isOnEditRoute && editingCartItem) {
-      console.log('Length page - NOT editing, clearing stale edit data');
-      // Don't clear editingCartItem (edit page needs it), but ensure we use selectedLength
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedLength = localStorage.getItem('customizeSelectedLength');
+      if (customizeSelectedLength) {
+        console.log('Length page - loading customize mode length from customizeSelectedLength:', customizeSelectedLength);
+        setSelectedLength(customizeSelectedLength);
+        // Also save to selected* for consistency
+        localStorage.setItem('selectedLength', customizeSelectedLength);
+        return; // Exit early - we're done
+      }
     }
     
+    // Main mode - load from main page's selectedLength
     const currentLength = localStorage.getItem('selectedLength');
     console.log('Length page - useEffect loading from localStorage:', currentLength, 'isOnEditRoute:', isOnEditRoute);
     
@@ -113,13 +133,22 @@ function LengthSelection() {
     
     // Also listen for customStorageChange event in case main page updates after mount
     const handleCustomStorageChange = () => {
-      // Only update if NOT editing
-      if (!window.location.pathname.includes('/edit')) {
-        const currentLength = localStorage.getItem('selectedLength');
-        if (currentLength) {
-          console.log('Length page - Updated from customStorageChange:', currentLength);
-          setSelectedLength(currentLength);
-        }
+      const pathname = window.location.pathname;
+      const isOnEditRoute = pathname.includes('/edit');
+      const isOnCustomizeRoute = pathname.includes('/noir/customize');
+      
+      let currentLength: string | null = null;
+      if (isOnEditRoute) {
+        currentLength = localStorage.getItem('editSelectedLength') || localStorage.getItem('selectedLength');
+      } else if (isOnCustomizeRoute) {
+        currentLength = localStorage.getItem('customizeSelectedLength') || localStorage.getItem('selectedLength');
+      } else {
+        currentLength = localStorage.getItem('selectedLength');
+      }
+      
+      if (currentLength) {
+        console.log('Length page - Updated from customStorageChange:', currentLength);
+        setSelectedLength(currentLength);
       }
     };
     

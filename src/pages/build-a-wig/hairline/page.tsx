@@ -19,6 +19,39 @@ function HairlineSelection() {
   const navigate = useNavigate();
   const [showLoading, setShowLoading] = useState(true);
   const [selectedHairline, setSelectedHairline] = useState<string[]>(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedHairline = localStorage.getItem('editSelectedHairline');
+      if (editSelectedHairline) {
+        return [editSelectedHairline];
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          if (item.hairline) {
+            return [item.hairline];
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedHairline = localStorage.getItem('customizeSelectedHairline');
+      if (customizeSelectedHairline) {
+        return [customizeSelectedHairline];
+      }
+    }
+    
+    // Main mode: use selected* keys
     const stored = localStorage.getItem('selectedHairline');
     return stored ? [stored] : ['NATURAL']; // Default to NATURAL as single selection
   });

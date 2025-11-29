@@ -17,6 +17,39 @@ function LaceSelection() {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedLace, setSelectedLace] = useState(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedLace = localStorage.getItem('editSelectedLace');
+      if (editSelectedLace) {
+        return editSelectedLace;
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          if (item.lace) {
+            return item.lace;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedLace = localStorage.getItem('customizeSelectedLace');
+      if (customizeSelectedLace) {
+        return customizeSelectedLace;
+      }
+    }
+    
+    // Main mode: use selected* keys
     return localStorage.getItem('selectedLace') || '13X6';
   });
   const [selectedView, setSelectedView] = useState(1); // Changed from 0 to 1 (middle image)

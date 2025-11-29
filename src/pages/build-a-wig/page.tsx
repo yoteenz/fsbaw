@@ -60,6 +60,29 @@ export default function BuildAWigPage() {
         try {
           const item = JSON.parse(editingCartItem);
           
+          // CRITICAL: Set editSelected* keys immediately so sub-pages can load them
+          // This ensures sub-pages load the cart item's specific selections, not defaults
+          localStorage.setItem('editSelectedCapSize', item.capSize || 'M');
+          localStorage.setItem('editSelectedLength', item.length || '24"');
+          localStorage.setItem('editSelectedDensity', item.density || '200%');
+          localStorage.setItem('editSelectedLace', item.lace || '13X6');
+          localStorage.setItem('editSelectedTexture', item.texture || 'SILKY');
+          localStorage.setItem('editSelectedColor', item.color || 'OFF BLACK');
+          localStorage.setItem('editSelectedHairline', item.hairline || 'NATURAL');
+          localStorage.setItem('editSelectedStyling', item.styling || 'NONE');
+          localStorage.setItem('editSelectedAddOns', JSON.stringify(item.addOns || []));
+          
+          // Also set selected* keys for consistency
+          localStorage.setItem('selectedCapSize', item.capSize || 'M');
+          localStorage.setItem('selectedLength', item.length || '24"');
+          localStorage.setItem('selectedDensity', item.density || '200%');
+          localStorage.setItem('selectedLace', item.lace || '13X6');
+          localStorage.setItem('selectedTexture', item.texture || 'SILKY');
+          localStorage.setItem('selectedColor', item.color || 'OFF BLACK');
+          localStorage.setItem('selectedHairline', item.hairline || 'NATURAL');
+          localStorage.setItem('selectedStyling', item.styling || 'NONE');
+          localStorage.setItem('selectedAddOns', JSON.stringify(item.addOns || []));
+          
           // Return the cart item's selections
           return {
             capSize: item.capSize || 'M',
@@ -75,6 +98,20 @@ export default function BuildAWigPage() {
         } catch (error) {
         }
       }
+      
+      // CRITICAL: In edit mode, return early to prevent clearing localStorage
+      // The editSelected* keys are already set above, and useEffect will load from editingCartItem
+      return {
+        capSize: 'M',
+        length: '24"',
+        density: '200%',
+        lace: '13X6',
+        texture: 'SILKY',
+        color: 'OFF BLACK',
+        hairline: 'NATURAL',
+        styling: 'NONE',
+        addOns: [],
+      };
     }
     
     // Check if there are saved values (coming back from sub-page)
@@ -215,21 +252,78 @@ export default function BuildAWigPage() {
     prices.texturePrice = 0;
     
     // Calculate hairline price
-    const hairlinePrices: { [key: string]: number } = {
-      'NATURAL': 0,
-      'PREMIUM': 20
-    };
-    prices.hairlinePrice = hairlinePrices[selections.hairline] || 0;
+    // CRITICAL: Handle NATURAL, PEAK, LAGOS, and LAGOS+PEAK combination
+    // Options: NATURAL ($0), PEAK ($40), LAGOS ($60), LAGOS+PEAK ($80 with $20 discount)
+    if (!selections.hairline || selections.hairline === 'NATURAL') {
+      prices.hairlinePrice = 0;
+    } else {
+      const hairlineArray = selections.hairline.split(',').map(h => h.trim());
+      let total = 0;
+      
+      hairlineArray.forEach(h => {
+        const hairlinePrices: { [key: string]: number } = {
+          'NATURAL': 0,
+          'PEAK': 40,
+          'LAGOS': 60
+        };
+        total += hairlinePrices[h] || 0;
+      });
+      
+      // Apply $20 discount to Lagos when combined with Peak
+      if (hairlineArray.includes('LAGOS') && hairlineArray.includes('PEAK')) {
+        total -= 20;
+      }
+      
+      prices.hairlinePrice = total;
+    }
     
     // Calculate styling price
-    const stylingPrices: { [key: string]: number } = {
-      'NONE': 0,
-      'BANGS': 40,
-      'CRIMPS': 60,
-      'FLAT IRON': 60,
-      'LAYERS': 60
-    };
-    prices.stylingPrice = stylingPrices[selections.styling] || 0;
+    // CRITICAL: Match styling page logic exactly - handle combinations and long length surcharges
+    if (!selections.styling || selections.styling === 'NONE') {
+      prices.stylingPrice = 0;
+    } else {
+      // Handle comma-separated styling values (combinations like "BANGS,CRIMPS")
+      const stylingArray = selections.styling.split(',').map(s => s.trim());
+      const hasBangs = stylingArray.includes('BANGS');
+      const otherStyling = stylingArray.find(id => id !== 'BANGS');
+      
+      // Get selected length to check for long length surcharge
+      const selectedLength = selections.length || '';
+      const isLongLength = selectedLength.includes('30') || selectedLength.includes('32') || selectedLength.includes('34') || selectedLength.includes('36');
+      
+      const stylingPrices: { [key: string]: number } = {
+        'BANGS': 40,
+        'CRIMPS': 140,
+        'FLAT IRON': 100,
+        'LAYERS': 180
+      };
+      
+      if (hasBangs && otherStyling) {
+        // Bangs + another styling: full price of secondary option + $20 for bangs (reduced from $40)
+        let secondaryPrice = stylingPrices[otherStyling] || 0;
+        
+        // Add $40 for lengths 30" and above for crimps, flat iron, and layers
+        if (isLongLength && (otherStyling === 'CRIMPS' || otherStyling === 'FLAT IRON' || otherStyling === 'LAYERS')) {
+          secondaryPrice += 40;
+        }
+        
+        prices.stylingPrice = secondaryPrice + 20; // $20 for bangs when combined
+      } else if (hasBangs) {
+        // Bangs only: $40 (base price)
+        prices.stylingPrice = 40;
+      } else {
+        // Other styling only: use original price + length surcharge
+        const stylingId = stylingArray[0];
+        let basePrice = stylingPrices[stylingId] || 0;
+        
+        // Add $40 for lengths 30" and above for crimps, flat iron, and layers
+        if (isLongLength && (stylingId === 'CRIMPS' || stylingId === 'FLAT IRON' || stylingId === 'LAYERS')) {
+          basePrice += 40;
+        }
+        
+        prices.stylingPrice = basePrice;
+      }
+    }
     
     // Calculate add-ons price
     const addOnPrices: { [key: string]: number } = {
@@ -290,6 +384,17 @@ export default function BuildAWigPage() {
   const [totalPrice, setTotalPrice] = useState(740);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Mobile-friendly debug panel state for edit mode
+  const [editModeDebugInfo, setEditModeDebugInfo] = useState<{
+    mode: string;
+    prefix: string;
+    customization: WigCustomization;
+    calculatedPrices: { [key: string]: number };
+    prices: { [key: string]: number };
+    total: number;
+    timestamp: string;
+  } | null>(null);
   
   
   // Ref to track if we're currently loading from localStorage (to prevent sync effect from overwriting)
@@ -787,6 +892,43 @@ export default function BuildAWigPage() {
           isLoadingFromStorage.current = false;
           // Clear the flag AFTER loading flag is cleared, so sync effect has had time to skip
           sessionStorage.removeItem('comingFromSubPage');
+          
+          // CRITICAL: Trigger change detection after loading is complete in edit mode
+          // This ensures hasChanges is set correctly after returning from sub-page
+          if (isEditPage && originalItem) {
+            // Use a small delay to ensure state has updated
+            setTimeout(() => {
+              // Read current selections from localStorage and compare with originalItem
+              const currentCapSize = localStorage.getItem('editSelectedCapSize') || localStorage.getItem('selectedCapSize') || 'M';
+              const currentLength = localStorage.getItem('editSelectedLength') || localStorage.getItem('selectedLength') || '24"';
+              const currentDensity = localStorage.getItem('editSelectedDensity') || localStorage.getItem('selectedDensity') || '200%';
+              const currentColor = localStorage.getItem('editSelectedColor') || localStorage.getItem('selectedColor') || 'OFF BLACK';
+              const currentTexture = localStorage.getItem('editSelectedTexture') || localStorage.getItem('selectedTexture') || 'SILKY';
+              const currentLace = localStorage.getItem('editSelectedLace') || localStorage.getItem('selectedLace') || '13X6';
+              const currentHairline = localStorage.getItem('editSelectedHairline') || localStorage.getItem('selectedHairline') || 'NATURAL';
+              const currentStyling = localStorage.getItem('editSelectedStyling') || localStorage.getItem('selectedStyling') || 'NONE';
+              const currentAddOns = JSON.parse(localStorage.getItem('editSelectedAddOns') || localStorage.getItem('selectedAddOns') || '[]');
+              
+              const hasChangesDetected = 
+                currentCapSize !== originalItem.capSize ||
+                currentLength !== originalItem.length ||
+                currentDensity !== originalItem.density ||
+                currentLace !== originalItem.lace ||
+                currentTexture !== originalItem.texture ||
+                currentColor !== originalItem.color ||
+                currentHairline !== originalItem.hairline ||
+                currentStyling !== originalItem.styling ||
+                JSON.stringify(currentAddOns) !== JSON.stringify(originalItem.addOns);
+              
+              console.log('[CHANGE DETECTION AFTER SUB-PAGE]', {
+                hasChangesDetected,
+                currentStyling,
+                originalStyling: originalItem.styling
+              });
+              
+              setHasChanges(hasChangesDetected);
+            }, 100);
+          }
         }, 300);
       } else if (editingCartItem && (isDifferentItem || !currentEditingItemIdRef.current)) {
         // First load or different item: load from editingCartItem
@@ -1855,11 +1997,28 @@ export default function BuildAWigPage() {
   
   useEffect(() => {
     const calculatePrice = () => {
+      // DEBUGGING: ALWAYS log to verify function is running
+      console.log('[PRICE CALCULATION] Function called', {
+        pathname: location.pathname,
+        timestamp: new Date().toISOString()
+      });
+      
       let total = basePrice;
       
       // Check which mode we're in
-      const isEditMode = location.pathname === '/build-a-wig/edit' && localStorage.getItem('editingCartItem') !== null;
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      const isEditMode = location.pathname === '/build-a-wig/edit' && editingCartItem !== null;
       const isCustomizeMode = location.pathname === '/build-a-wig/noir/customize';
+      
+      // DEBUGGING: Always log when on edit route to verify detection
+      console.log('[EDIT MODE DETECTION]', {
+        pathname: location.pathname,
+        editingCartItem: editingCartItem !== null ? 'exists' : 'null',
+        editingCartItemValue: editingCartItem ? 'has value' : 'null',
+        isEditMode,
+        customization,
+        timestamp: new Date().toISOString()
+      });
       
       // Determine the correct prefix based on mode
       let prefix = 'selected';
@@ -1869,14 +2028,49 @@ export default function BuildAWigPage() {
         prefix = 'customizeSelected';
       }
       
-      // CRITICAL: Always recalculate prices from current customization state first
+      // CRITICAL: In edit mode, read current selections directly from localStorage
+      // This ensures we always use the latest values, not stale state
+      let currentCustomization = customization;
+      if (isEditMode) {
+        // Read latest selections from localStorage to avoid stale state
+        currentCustomization = {
+          capSize: localStorage.getItem('editSelectedCapSize') || localStorage.getItem('selectedCapSize') || 'M',
+          length: localStorage.getItem('editSelectedLength') || localStorage.getItem('selectedLength') || '24"',
+          density: localStorage.getItem('editSelectedDensity') || localStorage.getItem('selectedDensity') || '200%',
+          color: localStorage.getItem('editSelectedColor') || localStorage.getItem('selectedColor') || 'OFF BLACK',
+          texture: localStorage.getItem('editSelectedTexture') || localStorage.getItem('selectedTexture') || 'SILKY',
+          lace: localStorage.getItem('editSelectedLace') || localStorage.getItem('selectedLace') || '13X6',
+          hairline: localStorage.getItem('editSelectedHairline') || localStorage.getItem('selectedHairline') || 'NATURAL',
+          styling: localStorage.getItem('editSelectedStyling') || localStorage.getItem('selectedStyling') || 'NONE',
+          addOns: JSON.parse(localStorage.getItem('editSelectedAddOns') || localStorage.getItem('selectedAddOns') || '[]')
+        };
+      }
+      
+      // DEBUGGING: Log edit mode price calculation
+      if (isEditMode) {
+        console.log('[EDIT MODE PRICE CALCULATION]', {
+          mode: 'EDIT',
+          prefix,
+          customization: currentCustomization,
+          basePrice,
+          editingCartItem: editingCartItem ? 'exists' : 'null',
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // CRITICAL: Always recalculate prices from current selections (from localStorage in edit mode)
       // This ensures prices are always correct even after many edits
-      const calculatedPrices = calculatePricesFromSelections(customization);
+      const calculatedPrices = calculatePricesFromSelections(currentCustomization);
+      
+      // DEBUGGING: Log calculated prices
+      if (isEditMode) {
+        console.log('[EDIT MODE] Calculated prices from selections:', calculatedPrices);
+      }
       
       // CRITICAL: Always recalculate capSizePrice based on current cap size selection
       // Flexible caps (XXS/XS/S, S/M/L) cost $40, regular caps cost $0
       let capSizePrice = 0;
-      const currentCapSize = customization.capSize || 'M';
+      const currentCapSize = currentCustomization.capSize || 'M';
       if (currentCapSize === 'XXS/XS/S' || currentCapSize === 'S/M/L') {
         capSizePrice = 40; // Flexible caps cost $40 more
       }
@@ -1888,6 +2082,19 @@ export default function BuildAWigPage() {
         const fallbackKey = `selected${key}Price`;
         const primaryValue = localStorage.getItem(primaryKey);
         const fallbackValue = localStorage.getItem(fallbackKey);
+        
+        // DEBUGGING: Log price lookup for edit mode
+        if (isEditMode) {
+          console.log(`[EDIT MODE] ${key} price lookup:`, {
+            primaryKey,
+            primaryValue,
+            fallbackKey,
+            fallbackValue,
+            calculatedValue,
+            using: primaryValue && !isNaN(parseFloat(primaryValue)) ? 'primary' : 
+                   fallbackValue && !isNaN(parseFloat(fallbackValue)) ? 'fallback' : 'calculated'
+          });
+        }
         
         // Use localStorage value if it exists and is valid, otherwise use calculated value
         if (primaryValue && !isNaN(parseFloat(primaryValue))) {
@@ -1909,8 +2116,55 @@ export default function BuildAWigPage() {
       const stylingPrice = getPrice('Styling', calculatedPrices.stylingPrice);
       const addOnsPrice = getPrice('AddOns', calculatedPrices.addOnsPrice);
       
+      // DEBUGGING: Log all prices being used
+      if (isEditMode) {
+        console.log('[EDIT MODE] All prices:', {
+          basePrice,
+          capSizePrice,
+          colorPrice,
+          lengthPrice,
+          densityPrice,
+          lacePrice,
+          texturePrice,
+          hairlinePrice,
+          stylingPrice,
+          addOnsPrice,
+          sum: capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice
+        });
+      }
+      
       // Add all the actual prices
       total += capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
+      
+      // DEBUGGING: Log final total
+      if (isEditMode) {
+        console.log('[EDIT MODE] Final total:', {
+          basePrice,
+          additions: capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice,
+          total
+        });
+        
+        // Update mobile debug panel with current customization (from localStorage)
+        setEditModeDebugInfo({
+          mode: 'EDIT',
+          prefix,
+          customization: currentCustomization,
+          calculatedPrices,
+          prices: {
+            capSizePrice,
+            colorPrice,
+            lengthPrice,
+            densityPrice,
+            lacePrice,
+            texturePrice,
+            hairlinePrice,
+            stylingPrice,
+            addOnsPrice
+          },
+          total,
+          timestamp: new Date().toISOString()
+        });
+      }
       
       setTotalPrice(total);
       
@@ -1928,6 +2182,10 @@ export default function BuildAWigPage() {
           stylingPrice,
           addOnsPrice
         };
+        
+        // DEBUGGING: Log prices being saved
+        console.log('[EDIT MODE] Saving prices to localStorage:', pricesToSave);
+        
         savePricesToLocalStorage(pricesToSave);
       }
     };
@@ -2080,8 +2338,8 @@ export default function BuildAWigPage() {
     setCurrentConfiguration(newConfig);
   }, [refreshTrigger]); // Removed selectedView dependency to reduce re-renders
 
-  // Detect changes in edit mode by comparing with original item
-  useEffect(() => {
+  // Helper function to detect changes in edit mode
+  const detectChanges = useCallback(() => {
     const isEditPage = location.pathname === '/build-a-wig/edit';
     
     // Skip change detection if we're currently loading from localStorage (to avoid overwriting hasChanges set by route change effect)
@@ -2090,17 +2348,37 @@ export default function BuildAWigPage() {
     }
     
     if (isEditPage && originalItem) {
-      // Compare current customization with original item
+      // CRITICAL: Read current selections directly from localStorage to avoid stale state
+      // This ensures we detect changes immediately after sub-page edits
+      const currentCapSize = localStorage.getItem('editSelectedCapSize') || localStorage.getItem('selectedCapSize') || 'M';
+      const currentLength = localStorage.getItem('editSelectedLength') || localStorage.getItem('selectedLength') || '24"';
+      const currentDensity = localStorage.getItem('editSelectedDensity') || localStorage.getItem('selectedDensity') || '200%';
+      const currentColor = localStorage.getItem('editSelectedColor') || localStorage.getItem('selectedColor') || 'OFF BLACK';
+      const currentTexture = localStorage.getItem('editSelectedTexture') || localStorage.getItem('selectedTexture') || 'SILKY';
+      const currentLace = localStorage.getItem('editSelectedLace') || localStorage.getItem('selectedLace') || '13X6';
+      const currentHairline = localStorage.getItem('editSelectedHairline') || localStorage.getItem('selectedHairline') || 'NATURAL';
+      const currentStyling = localStorage.getItem('editSelectedStyling') || localStorage.getItem('selectedStyling') || 'NONE';
+      const currentAddOns = JSON.parse(localStorage.getItem('editSelectedAddOns') || localStorage.getItem('selectedAddOns') || '[]');
+      
+      // Compare current selections (from localStorage) with original item
       const hasChangesDetected = 
-        customization.capSize !== originalItem.capSize ||
-        customization.length !== originalItem.length ||
-        customization.density !== originalItem.density ||
-        customization.lace !== originalItem.lace ||
-        customization.texture !== originalItem.texture ||
-        customization.color !== originalItem.color ||
-        customization.hairline !== originalItem.hairline ||
-        customization.styling !== originalItem.styling ||
-        JSON.stringify(customization.addOns) !== JSON.stringify(originalItem.addOns);
+        currentCapSize !== originalItem.capSize ||
+        currentLength !== originalItem.length ||
+        currentDensity !== originalItem.density ||
+        currentLace !== originalItem.lace ||
+        currentTexture !== originalItem.texture ||
+        currentColor !== originalItem.color ||
+        currentHairline !== originalItem.hairline ||
+        currentStyling !== originalItem.styling ||
+        JSON.stringify(currentAddOns) !== JSON.stringify(originalItem.addOns);
+      
+      console.log('[CHANGE DETECTION]', {
+        hasChangesDetected,
+        currentCapSize,
+        originalCapSize: originalItem.capSize,
+        currentStyling,
+        originalStyling: originalItem.styling
+      });
       
       setHasChanges(hasChangesDetected);
       
@@ -2114,7 +2392,38 @@ export default function BuildAWigPage() {
       setOriginalItem(null);
       setHasChanges(false);
     }
-  }, [customization, originalItem, location.pathname, addToBagState]);
+  }, [location.pathname, originalItem, addToBagState]);
+  
+  // Detect changes in edit mode by comparing with original item
+  useEffect(() => {
+    detectChanges();
+  }, [customization, originalItem, location.pathname, addToBagState, detectChanges]);
+  
+  // Also listen for customStorageChange events to trigger change detection immediately
+  useEffect(() => {
+    const isEditPage = location.pathname === '/build-a-wig/edit';
+    
+    if (!isEditPage || !originalItem) {
+      return;
+    }
+    
+    const handleChangeDetection = () => {
+      // Use requestAnimationFrame to ensure localStorage has been updated
+      requestAnimationFrame(() => {
+        // Small delay to ensure localStorage is fully updated
+        setTimeout(() => {
+          detectChanges();
+        }, 50);
+      });
+    };
+    
+    // Listen for customStorageChange events (dispatched by sub-pages)
+    window.addEventListener('customStorageChange', handleChangeDetection);
+    
+    return () => {
+      window.removeEventListener('customStorageChange', handleChangeDetection);
+    };
+  }, [location.pathname, originalItem, detectChanges]);
 
   // Initialize button state from localStorage on page load
   useEffect(() => {
@@ -2173,6 +2482,62 @@ export default function BuildAWigPage() {
       const editingCartItemId = localStorage.getItem('editingCartItemId');
     
     if (editingCartItem && editingCartItemId) {
+      // CRITICAL: Recalculate price RIGHT BEFORE saving to ensure it's always correct
+      // Don't rely on totalPrice state which might be stale after many edits
+      const basePrice = (customization.capSize === 'XXS/XS/S' || customization.capSize === 'S/M/L') ? 780 : 740;
+      
+      // Get prices from localStorage with fallback to calculated prices
+      const getPrice = (key: string) => {
+        const editSelectedKey = `editSelected${key}Price`;
+        const selectedKey = `selected${key}Price`;
+        const editValue = localStorage.getItem(editSelectedKey);
+        const selectedValue = localStorage.getItem(selectedKey);
+        const value = editValue || selectedValue || '0';
+        return parseFloat(value) || 0;
+      };
+      
+      // CRITICAL: Always recalculate capSizePrice based on current cap size
+      let capSizePrice = 0;
+      if (customization.capSize === 'XXS/XS/S' || customization.capSize === 'S/M/L') {
+        capSizePrice = 40;
+      }
+      
+      // Calculate prices from current selections as fallback
+      const calculatedPrices = calculatePricesFromSelections(customization);
+      
+      const colorPrice = getPrice('Color') || calculatedPrices.colorPrice;
+      const lengthPrice = getPrice('Length') || calculatedPrices.lengthPrice;
+      const densityPrice = getPrice('Density') || calculatedPrices.densityPrice;
+      const lacePrice = getPrice('Lace') || calculatedPrices.lacePrice;
+      const texturePrice = getPrice('Texture') || calculatedPrices.texturePrice;
+      const hairlinePrice = getPrice('Hairline') || calculatedPrices.hairlinePrice;
+      const stylingPrice = getPrice('Styling') || calculatedPrices.stylingPrice;
+      const addOnsPrice = getPrice('AddOns') || calculatedPrices.addOnsPrice;
+      
+      // Calculate final price
+      const finalPrice = basePrice + capSizePrice + colorPrice + lengthPrice + densityPrice + lacePrice + texturePrice + hairlinePrice + stylingPrice + addOnsPrice;
+      
+      // DEBUGGING: Log save operation
+      console.log('[EDIT MODE SAVE] Saving cart item:', {
+        editingCartItemId,
+        customization,
+        prices: {
+          basePrice,
+          capSizePrice,
+          colorPrice,
+          lengthPrice,
+          densityPrice,
+          lacePrice,
+          texturePrice,
+          hairlinePrice,
+          stylingPrice,
+          addOnsPrice
+        },
+        finalPrice,
+        totalPriceState: totalPrice,
+        timestamp: new Date().toISOString()
+      });
+      
       // Update existing cart item
       const existingCartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
       
@@ -2185,9 +2550,9 @@ export default function BuildAWigPage() {
       
       const updatedCartItems = existingCartItems.map((item: any) => {
         if (item.id === editingCartItemId) {
-          return {
+          const updatedItem = {
             ...item,
-            price: totalPrice,
+            price: finalPrice, // Use recalculated price, not state
             capSize: customization.capSize,
             length: customization.length,
             density: customization.density,
@@ -2199,11 +2564,69 @@ export default function BuildAWigPage() {
             partSelection: localStorage.getItem('selectedPartSelection') || 'MIDDLE',
             addOns: customization.addOns
           };
+          
+          // DEBUGGING: Log updated item
+          console.log('[EDIT MODE SAVE] Updated cart item:', updatedItem);
+          
+          return updatedItem;
         }
         return item;
       });
       
       localStorage.setItem('cartItems', JSON.stringify(updatedCartItems));
+      
+      // DEBUGGING: Verify save
+      const savedItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+      const savedItem = savedItems.find((item: any) => item.id === editingCartItemId);
+      console.log('[EDIT MODE SAVE] Verification - saved item:', savedItem);
+      
+      // CRITICAL: Update editingCartItem in localStorage to reflect saved changes
+      // This ensures subsequent edits start from the latest saved state, not the initial edit
+      const updatedEditingCartItem = {
+        ...JSON.parse(editingCartItem),
+        price: finalPrice,
+        capSize: customization.capSize,
+        length: customization.length,
+        density: customization.density,
+        color: customization.color,
+        texture: customization.texture,
+        lace: customization.lace,
+        hairline: customization.hairline,
+        styling: validStyling,
+        partSelection: localStorage.getItem('selectedPartSelection') || 'MIDDLE',
+        addOns: customization.addOns
+      };
+      localStorage.setItem('editingCartItem', JSON.stringify(updatedEditingCartItem));
+      
+      // CRITICAL: Also update editSelected* keys to match saved state
+      // This ensures that when clicking "EDIT IN BUILD-A-WIG" again, it loads the latest saved selections
+      localStorage.setItem('editSelectedCapSize', customization.capSize);
+      localStorage.setItem('editSelectedLength', customization.length);
+      localStorage.setItem('editSelectedDensity', customization.density);
+      localStorage.setItem('editSelectedColor', customization.color);
+      localStorage.setItem('editSelectedTexture', customization.texture);
+      localStorage.setItem('editSelectedLace', customization.lace);
+      localStorage.setItem('editSelectedHairline', customization.hairline);
+      localStorage.setItem('editSelectedStyling', validStyling);
+      localStorage.setItem('editSelectedAddOns', JSON.stringify(customization.addOns));
+      
+      // Also update selected* keys for consistency
+      localStorage.setItem('selectedCapSize', customization.capSize);
+      localStorage.setItem('selectedLength', customization.length);
+      localStorage.setItem('selectedDensity', customization.density);
+      localStorage.setItem('selectedColor', customization.color);
+      localStorage.setItem('selectedTexture', customization.texture);
+      localStorage.setItem('selectedLace', customization.lace);
+      localStorage.setItem('selectedHairline', customization.hairline);
+      localStorage.setItem('selectedStyling', validStyling);
+      localStorage.setItem('selectedAddOns', JSON.stringify(customization.addOns));
+      
+      // DEBUGGING: Log updated editingCartItem
+      console.log('[EDIT MODE SAVE] Updated editingCartItem in localStorage:', updatedEditingCartItem);
+      console.log('[EDIT MODE SAVE] Updated editSelected* keys with latest selections');
+      
+      // Update totalPrice state to match saved price
+      setTotalPrice(finalPrice);
       
       // Update originalItem to reflect saved changes
       const updatedOriginalItem = {
@@ -2220,11 +2643,15 @@ export default function BuildAWigPage() {
       setOriginalItem(updatedOriginalItem);
       setHasChanges(false); // Reset changes flag after saving
       
+      // DEBUGGING: Log state updates
+      console.log('[EDIT MODE SAVE] State updated - originalItem:', updatedOriginalItem, 'hasChanges: false');
+      
       // Set button to 'added' state to show "IN THE BAG"
       setAddToBagState('added');
       
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('cartUpdated'));
+      window.dispatchEvent(new CustomEvent('cartCountUpdated', { detail: parseInt(localStorage.getItem('cartCount') || '0') }));
     } else {
       // Create new cart item
       // CRITICAL: Ensure styling is not a part selection (MIDDLE, LEFT, RIGHT) - it should be NONE or a valid styling option
@@ -2400,6 +2827,82 @@ export default function BuildAWigPage() {
   return (
     <>
       {showLoading && <LoadingScreen />}
+      {/* Mobile Debug Panel for Edit Mode */}
+      {editModeDebugInfo && location.pathname === '/build-a-wig/edit' && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          left: '10px',
+          right: '10px',
+          background: 'rgba(0, 0, 0, 0.95)',
+          color: 'white',
+          padding: '12px',
+          borderRadius: '8px',
+          fontSize: '10px',
+          maxHeight: '80vh',
+          overflow: 'auto',
+          zIndex: 9999,
+          fontFamily: 'monospace',
+          border: '2px solid #ef4444'
+        }}>
+          <div style={{ marginBottom: '8px', fontWeight: 'bold', fontSize: '12px', color: '#ef4444' }}>
+            DEBUG: EDIT MODE PRICE CALCULATION
+          </div>
+          <div style={{ marginBottom: '4px', fontSize: '9px', color: '#999' }}>
+            Prefix: {editModeDebugInfo.prefix} | {new Date(editModeDebugInfo.timestamp).toLocaleTimeString()}
+          </div>
+          
+          <div style={{ marginBottom: '8px', borderTop: '1px solid #555', paddingTop: '8px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Customization:</div>
+            <div style={{ marginLeft: '10px', fontSize: '9px' }}>
+              Cap: {editModeDebugInfo.customization.capSize} | 
+              Length: {editModeDebugInfo.customization.length} | 
+              Density: {editModeDebugInfo.customization.density} | 
+              Lace: {editModeDebugInfo.customization.lace} | 
+              Color: {editModeDebugInfo.customization.color}
+            </div>
+          </div>
+          
+          <div style={{ marginBottom: '8px', borderTop: '1px solid #555', paddingTop: '8px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Calculated Prices:</div>
+            {Object.entries(editModeDebugInfo.calculatedPrices).map(([key, value]) => (
+              <div key={key} style={{ marginLeft: '10px', fontSize: '9px', color: value > 0 ? '#4ade80' : '#999' }}>
+                {key}: ${value}
+              </div>
+            ))}
+          </div>
+          
+          <div style={{ marginBottom: '8px', borderTop: '1px solid #555', paddingTop: '8px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Prices Used:</div>
+            {Object.entries(editModeDebugInfo.prices).map(([key, value]) => (
+              <div key={key} style={{ marginLeft: '10px', fontSize: '9px', color: value > 0 ? '#4ade80' : '#999' }}>
+                {key}: ${value}
+              </div>
+            ))}
+          </div>
+          
+          <div style={{ borderTop: '1px solid #555', paddingTop: '8px', fontWeight: 'bold', fontSize: '14px', color: '#4ade80' }}>
+            Total: ${editModeDebugInfo.total}
+          </div>
+          
+          <button 
+            onClick={() => setEditModeDebugInfo(null)}
+            style={{
+              marginTop: '8px',
+              padding: '6px 12px',
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '10px',
+              width: '100%'
+            }}
+          >
+            Close Debug Panel
+          </button>
+        </div>
+      )}
       <div className="min-h-screen" style={{
         position: 'relative'
       }}>

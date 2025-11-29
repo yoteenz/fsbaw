@@ -18,6 +18,39 @@ function ColorSelection() {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedColor, setSelectedColor] = useState(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedColor = localStorage.getItem('editSelectedColor');
+      if (editSelectedColor) {
+        return editSelectedColor;
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          if (item.color) {
+            return item.color;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedColor = localStorage.getItem('customizeSelectedColor');
+      if (customizeSelectedColor) {
+        return customizeSelectedColor;
+      }
+    }
+    
+    // Main mode: use selected* keys
     return localStorage.getItem('selectedColor') || 'OFF BLACK';
   });
   const [selectedView, setSelectedView] = useState(1);
@@ -45,7 +78,19 @@ function ColorSelection() {
       setCartCount(newCartCount);
       
       // Update selected color from localStorage
-      const storedColor = localStorage.getItem('selectedColor');
+      // CRITICAL: Check editSelected* keys first when in edit mode, then customizeSelected* for customize mode
+      const pathname = window.location.pathname;
+      const isOnEditRoute = pathname.includes('/edit');
+      const isOnCustomizeRoute = pathname.includes('/noir/customize');
+      
+      let storedColor: string | null = null;
+      if (isOnEditRoute) {
+        storedColor = localStorage.getItem('editSelectedColor') || localStorage.getItem('selectedColor');
+      } else if (isOnCustomizeRoute) {
+        storedColor = localStorage.getItem('customizeSelectedColor') || localStorage.getItem('selectedColor');
+      } else {
+        storedColor = localStorage.getItem('selectedColor');
+      }
       if (storedColor && storedColor !== selectedColor) {
         setSelectedColor(storedColor);
       }
@@ -78,14 +123,41 @@ function ColorSelection() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Initialize with edit mode data if available
+  // Initialize with edit mode or customize mode data if available
   useEffect(() => {
-    const editingCartItem = localStorage.getItem('editingCartItem');
-    if (editingCartItem) {
-      const item = JSON.parse(editingCartItem);
-      console.log('Color page - loading edit mode color:', item.color);
-      if (item.color) {
-        setSelectedColor(item.color);
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedColor = localStorage.getItem('editSelectedColor');
+      if (editSelectedColor) {
+        setSelectedColor(editSelectedColor);
+        return;
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          console.log('Color page - loading edit mode color:', item.color);
+          if (item.color) {
+            setSelectedColor(item.color);
+            // Also save to editSelected* for consistency
+            localStorage.setItem('editSelectedColor', item.color);
+          }
+        } catch (e) {
+          console.error('Color page - Error parsing editingCartItem:', e);
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedColor = localStorage.getItem('customizeSelectedColor');
+      if (customizeSelectedColor) {
+        setSelectedColor(customizeSelectedColor);
       }
     }
   }, []);

@@ -17,6 +17,39 @@ function TextureSelection() {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedTexture, setSelectedTexture] = useState(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedTexture = localStorage.getItem('editSelectedTexture');
+      if (editSelectedTexture) {
+        return editSelectedTexture;
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          if (item.texture) {
+            return item.texture;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedTexture = localStorage.getItem('customizeSelectedTexture');
+      if (customizeSelectedTexture) {
+        return customizeSelectedTexture;
+      }
+    }
+    
+    // Main mode: use selected* keys
     return localStorage.getItem('selectedTexture') || 'SILKY';
   });
   const [selectedView, setSelectedView] = useState(1); // Changed from 0 to 1 (middle image)

@@ -16,6 +16,39 @@ interface CapSizeOption {
 function CapSizeSelection() {
   const navigate = useNavigate();
   const [selectedCapSize, setSelectedCapSize] = useState(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedCapSize = localStorage.getItem('editSelectedCapSize');
+      if (editSelectedCapSize) {
+        return editSelectedCapSize;
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          if (item.capSize) {
+            return item.capSize;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedCapSize = localStorage.getItem('customizeSelectedCapSize');
+      if (customizeSelectedCapSize) {
+        return customizeSelectedCapSize;
+      }
+    }
+    
+    // Main mode: use selected* keys
     return localStorage.getItem('selectedCapSize') || 'M';
   });
   const [selectedView, setSelectedView] = useState(1); // Changed from 0 to 1 (middle image)
@@ -43,7 +76,19 @@ function CapSizeSelection() {
       setCartCount(newCartCount);
       
       // Update selected cap size from localStorage
-      const storedCapSize = localStorage.getItem('selectedCapSize');
+      // CRITICAL: Check editSelected* keys first when in edit mode, then customizeSelected* for customize mode
+      const pathname = window.location.pathname;
+      const isOnEditRoute = pathname.includes('/edit');
+      const isOnCustomizeRoute = pathname.includes('/noir/customize');
+      
+      let storedCapSize: string | null = null;
+      if (isOnEditRoute) {
+        storedCapSize = localStorage.getItem('editSelectedCapSize') || localStorage.getItem('selectedCapSize');
+      } else if (isOnCustomizeRoute) {
+        storedCapSize = localStorage.getItem('customizeSelectedCapSize') || localStorage.getItem('selectedCapSize');
+      } else {
+        storedCapSize = localStorage.getItem('selectedCapSize');
+      }
       if (storedCapSize && storedCapSize !== selectedCapSize) {
         setSelectedCapSize(storedCapSize);
       }
@@ -274,14 +319,41 @@ function CapSizeSelection() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Initialize with edit mode data if available
+  // Initialize with edit mode or customize mode data if available
   useEffect(() => {
-    const editingCartItem = localStorage.getItem('editingCartItem');
-    if (editingCartItem) {
-      const item = JSON.parse(editingCartItem);
-      console.log('Cap-size page - loading edit mode cap size:', item.capSize);
-      if (item.capSize) {
-        setSelectedCapSize(item.capSize);
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedCapSize = localStorage.getItem('editSelectedCapSize');
+      if (editSelectedCapSize) {
+        setSelectedCapSize(editSelectedCapSize);
+        return;
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          console.log('Cap-size page - loading edit mode cap size:', item.capSize);
+          if (item.capSize) {
+            setSelectedCapSize(item.capSize);
+            // Also save to editSelected* for consistency
+            localStorage.setItem('editSelectedCapSize', item.capSize);
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedCapSize = localStorage.getItem('customizeSelectedCapSize');
+      if (customizeSelectedCapSize) {
+        setSelectedCapSize(customizeSelectedCapSize);
       }
     }
   }, []);

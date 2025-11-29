@@ -9,11 +9,90 @@ export default function StylingSelectionPage() {
   const navigate = useNavigate();
   const [selectedView, setSelectedView] = useState(1);
   const [selectedHairStyling, setSelectedHairStyling] = useState<string[]>(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check editSelected* keys first when in edit mode
+    if (isOnEditRoute) {
+      const editSelectedStyling = localStorage.getItem('editSelectedStyling');
+      if (editSelectedStyling) {
+        return [editSelectedStyling];
+      }
+      // Fallback to editingCartItem
+      const editingCartItem = localStorage.getItem('editingCartItem');
+      if (editingCartItem) {
+        try {
+          const item = JSON.parse(editingCartItem);
+          if (item.styling) {
+            return [item.styling];
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // CRITICAL: Check customizeSelected* keys when in customize mode
+    if (isOnCustomizeRoute) {
+      const customizeSelectedStyling = localStorage.getItem('customizeSelectedStyling');
+      if (customizeSelectedStyling) {
+        return [customizeSelectedStyling];
+      }
+    }
+    
+    // Main mode: use selected* keys
     const stored = localStorage.getItem('selectedHairStyling');
     return stored ? [stored] : []; // empty array means no hair styling selected
   });
   const [selectedPartSelection, setSelectedPartSelection] = useState(() => {
-    return localStorage.getItem('selectedPartSelection') || 'MIDDLE';
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    // CRITICAL: Check if styling is actually selected (not NONE or empty)
+    let hasStyling = false;
+    
+    if (isOnEditRoute) {
+      // Check editSelectedStyling first
+      const editSelectedStyling = localStorage.getItem('editSelectedStyling');
+      if (editSelectedStyling && editSelectedStyling !== 'NONE' && editSelectedStyling.trim() !== '') {
+        hasStyling = true;
+      } else {
+        // Fallback to editingCartItem
+        const editingCartItem = localStorage.getItem('editingCartItem');
+        if (editingCartItem) {
+          try {
+            const item = JSON.parse(editingCartItem);
+            if (item.styling && item.styling !== 'NONE' && item.styling.trim() !== '') {
+              hasStyling = true;
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+    } else if (isOnCustomizeRoute) {
+      const customizeSelectedStyling = localStorage.getItem('customizeSelectedStyling');
+      if (customizeSelectedStyling && customizeSelectedStyling !== 'NONE' && customizeSelectedStyling.trim() !== '') {
+        hasStyling = true;
+      }
+    } else {
+      const storedStyling = localStorage.getItem('selectedHairStyling');
+      if (storedStyling && storedStyling !== 'NONE' && storedStyling.trim() !== '') {
+        hasStyling = true;
+      }
+    }
+    
+    const storedPartSelection = localStorage.getItem('selectedPartSelection') || 'MIDDLE';
+    
+    // CRITICAL: If no styling is selected (or styling is NONE), force MIDDLE regardless of what's stored
+    if (!hasStyling && storedPartSelection !== 'MIDDLE') {
+      console.log('Part selection initialization: No styling selected, forcing MIDDLE (was:', storedPartSelection, ')');
+      return 'MIDDLE';
+    }
+    
+    return storedPartSelection;
   });
   const [showLoading, setShowLoading] = useState(true);
   
@@ -58,6 +137,19 @@ export default function StylingSelectionPage() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // CRITICAL: Reset part selection to MIDDLE when no styling is selected
+  useEffect(() => {
+    // Check if styling is actually selected (not empty array and not 'NONE')
+    const hasStylingSelected = selectedHairStyling.length > 0 && 
+                               selectedHairStyling.some(s => s !== 'NONE' && s.trim() !== '');
+    
+    if (!hasStylingSelected && selectedPartSelection !== 'MIDDLE') {
+      console.log('Resetting part selection to MIDDLE because no styling is selected. Current styling:', selectedHairStyling, 'Current part:', selectedPartSelection);
+      setSelectedPartSelection('MIDDLE');
+      localStorage.setItem('selectedPartSelection', 'MIDDLE');
+    }
+  }, [selectedHairStyling, selectedPartSelection]);
 
   // Get wig views based on selected hairline from localStorage
   const getWigViews = () => {
@@ -187,10 +279,16 @@ export default function StylingSelectionPage() {
   };
 
   const handlePartSelectionSelect = (partId: string) => {
+    // CRITICAL: Check if styling is actually selected (not empty and not 'NONE')
+    const hasStylingSelected = selectedHairStyling.length > 0 && 
+                               selectedHairStyling.some(s => s !== 'NONE' && s.trim() !== '');
+    
     // Only allow changing part selection if hair styling is selected
     // MIDDLE can always be selected, but LEFT and RIGHT require hair styling
-    if (partId === 'MIDDLE' || selectedHairStyling.length > 0) {
+    if (partId === 'MIDDLE' || hasStylingSelected) {
       setSelectedPartSelection(partId);
+    } else {
+      console.log('handlePartSelectionSelect: Blocked selection of', partId, '- no styling selected');
     }
   };
 
@@ -643,8 +741,11 @@ export default function StylingSelectionPage() {
             <div className="flex justify-center items-center mb-6" style={{ marginTop: '15px' }}>
               <div className="grid grid-cols-3 gap-3">
               {partSelectionOptions.map((option) => {
-                const isDisabled = option.id !== 'MIDDLE' && selectedHairStyling.length === 0;
-                console.log(`Part selection ${option.id}: isDisabled=${isDisabled}, selectedHairStyling.length=${selectedHairStyling.length}`);
+                // CRITICAL: Check if styling is actually selected (not empty and not 'NONE')
+                const hasStylingSelected = selectedHairStyling.length > 0 && 
+                                           selectedHairStyling.some(s => s !== 'NONE' && s.trim() !== '');
+                const isDisabled = option.id !== 'MIDDLE' && !hasStylingSelected;
+                console.log(`Part selection ${option.id}: isDisabled=${isDisabled}, selectedHairStyling:`, selectedHairStyling, 'hasStylingSelected:', hasStylingSelected);
                 return (
                   <ThumbBox
                     key={option.id}
@@ -653,11 +754,11 @@ export default function StylingSelectionPage() {
                     label={option.name}
                     isSelected={selectedPartSelection === option.id}
                     onClick={() => {
-                      console.log('Part selection clicked:', option.id, 'selectedHairStyling:', selectedHairStyling, 'length:', selectedHairStyling.length);
-                      if (option.id === 'MIDDLE' || selectedHairStyling.length > 0) {
+                      console.log('Part selection clicked:', option.id, 'selectedHairStyling:', selectedHairStyling, 'hasStylingSelected:', hasStylingSelected);
+                      if (option.id === 'MIDDLE' || hasStylingSelected) {
                         handlePartSelectionSelect(option.id);
                       } else {
-                        console.log('Selection blocked for:', option.id);
+                        console.log('Selection blocked for:', option.id, '- no styling selected');
                       }
                     }}
                     imgSize={75}
