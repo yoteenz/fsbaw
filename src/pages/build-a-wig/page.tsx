@@ -700,36 +700,47 @@ export default function BuildAWigPage() {
         const savedStylingEdit = localStorage.getItem('editSelectedStyling');
         const savedAddOnsEdit = localStorage.getItem('editSelectedAddOns');
         
-        // Fall back to selected* keys if editSelected* keys don't exist
-        const savedCapSize = savedCapSizeEdit || localStorage.getItem('selectedCapSize');
-        const savedLength = savedLengthEdit || localStorage.getItem('selectedLength');
-        const savedDensity = savedDensityEdit || localStorage.getItem('selectedDensity');
-        const savedLace = savedLaceEdit || localStorage.getItem('selectedLace');
-        const savedTexture = savedTextureEdit || localStorage.getItem('selectedTexture');
-        const savedColor = savedColorEdit || localStorage.getItem('selectedColor');
-        const savedHairline = savedHairlineEdit || localStorage.getItem('selectedHairline');
-        const savedStyling = savedStylingEdit || localStorage.getItem('selectedStyling');
-        const savedAddOns = savedAddOnsEdit || localStorage.getItem('selectedAddOns');
+        // Also check selected* keys as fallback
+        const savedCapSizeSelected = localStorage.getItem('selectedCapSize');
+        const savedLengthSelected = localStorage.getItem('selectedLength');
+        const savedDensitySelected = localStorage.getItem('selectedDensity');
+        const savedLaceSelected = localStorage.getItem('selectedLace');
+        const savedTextureSelected = localStorage.getItem('selectedTexture');
+        const savedColorSelected = localStorage.getItem('selectedColor');
+        const savedHairlineSelected = localStorage.getItem('selectedHairline');
+        const savedStylingSelected = localStorage.getItem('selectedStyling');
+        const savedAddOnsSelected = localStorage.getItem('selectedAddOns');
         
-        // Always load from localStorage when coming from sub-page
-      // CRITICAL: Ensure styling is not a part selection (MIDDLE, LEFT, RIGHT) - it should be NONE or a valid styling option
-          let validStyling = savedStyling !== null ? savedStyling : 'NONE';
-      const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
-      if (partSelectionOptions.includes(validStyling)) {
-        validStyling = 'NONE'; // If styling is a part selection, set to NONE
-      }
-      
-          const updatedCustomization = {
-            capSize: savedCapSize || 'M',
-            length: savedLength || '24"',
-            density: savedDensity || '200%',
-            lace: savedLace || '13X6',
-            texture: savedTexture || 'SILKY',
-            color: savedColor || 'OFF BLACK',
-            hairline: savedHairline || 'NATURAL',
-        styling: validStyling,
-        addOns: savedAddOns ? JSON.parse(savedAddOns) : [],
-          };
+        // Fall back to selected* keys if editSelected* keys don't exist
+        // Use current customization state as fallback to preserve existing selections (like customize mode)
+        const savedCapSizeFinal = savedCapSizeEdit || savedCapSizeSelected || customization.capSize || 'M';
+        const savedLength = savedLengthEdit || savedLengthSelected || customization.length || '24"';
+        const savedDensity = savedDensityEdit || savedDensitySelected || customization.density || '200%';
+        const savedLace = savedLaceEdit || savedLaceSelected || customization.lace || '13X6';
+        const savedTexture = savedTextureEdit || savedTextureSelected || customization.texture || 'SILKY';
+        const savedColor = savedColorEdit || savedColorSelected || customization.color || 'OFF BLACK';
+        const savedHairline = savedHairlineEdit || savedHairlineSelected || customization.hairline || 'NATURAL';
+        const savedStyling = savedStylingEdit || savedStylingSelected || customization.styling || 'NONE';
+        const savedAddOns = savedAddOnsEdit || savedAddOnsSelected || JSON.stringify(customization.addOns) || '[]';
+        
+        // CRITICAL: Ensure styling is not a part selection (MIDDLE, LEFT, RIGHT) - it should be NONE or a valid styling option
+        let validStyling = savedStyling !== null && savedStyling !== 'NONE' ? savedStyling : 'NONE';
+        const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
+        if (partSelectionOptions.includes(validStyling)) {
+          validStyling = 'NONE'; // If styling is a part selection, set to NONE
+        }
+        
+        const updatedCustomization = {
+          capSize: savedCapSizeFinal,
+          length: savedLength,
+          density: savedDensity,
+          lace: savedLace,
+          texture: savedTexture,
+          color: savedColor,
+          hairline: savedHairline,
+          styling: validStyling,
+          addOns: savedAddOns ? JSON.parse(savedAddOns) : [],
+        };
           
         
         // CRITICAL: Read prices from localStorage (saved by sub-pages) to preserve exact prices BEFORE updating state
@@ -784,7 +795,18 @@ export default function BuildAWigPage() {
         // Also call savePricesToLocalStorage for consistency
         savePricesToLocalStorage(pricesToSave);
         
-        // CRITICAL: Also save to both selected* and editSelected* keys immediately to ensure they're available
+        // CRITICAL: Also save to editSelected* keys immediately to ensure they're available (like customize mode)
+        localStorage.setItem('editSelectedCapSize', updatedCustomization.capSize);
+        localStorage.setItem('editSelectedLength', updatedCustomization.length);
+        localStorage.setItem('editSelectedDensity', updatedCustomization.density);
+        localStorage.setItem('editSelectedLace', updatedCustomization.lace);
+        localStorage.setItem('editSelectedTexture', updatedCustomization.texture);
+        localStorage.setItem('editSelectedColor', updatedCustomization.color);
+        localStorage.setItem('editSelectedHairline', updatedCustomization.hairline);
+        localStorage.setItem('editSelectedStyling', validStyling);
+        localStorage.setItem('editSelectedAddOns', JSON.stringify(updatedCustomization.addOns));
+        
+        // Also save to selected* keys for sub-pages to read
         localStorage.setItem('selectedCapSize', updatedCustomization.capSize);
         localStorage.setItem('selectedLength', updatedCustomization.length);
         localStorage.setItem('selectedDensity', updatedCustomization.density);
@@ -795,33 +817,15 @@ export default function BuildAWigPage() {
         localStorage.setItem('selectedStyling', validStyling);
         localStorage.setItem('selectedAddOns', JSON.stringify(updatedCustomization.addOns));
         
-        localStorage.setItem('editSelectedCapSize', updatedCustomization.capSize);
-        localStorage.setItem('editSelectedLength', updatedCustomization.length);
-        localStorage.setItem('editSelectedDensity', updatedCustomization.density);
-        localStorage.setItem('editSelectedLace', updatedCustomization.lace);
-        localStorage.setItem('editSelectedTexture', updatedCustomization.texture);
-        localStorage.setItem('editSelectedColor', updatedCustomization.color);
-        localStorage.setItem('editSelectedHairline', updatedCustomization.hairline);
-        localStorage.setItem('editSelectedStyling', validStyling);
-        localStorage.setItem('editSelectedAddOns', JSON.stringify(updatedCustomization.addOns));
-          
-          // Update customization state (originalItem stays the same for change detection)
-          // This will trigger wigViews to update via useMemo dependency AND trigger calculatePrice via useEffect dependency
-          setCustomization(updatedCustomization);
+        // Update customization state (originalItem stays the same for change detection)
+        // This will trigger wigViews to update via useMemo dependency AND trigger calculatePrice via useEffect dependency
+        setCustomization(updatedCustomization);
         
+        // Clear the flag immediately (like customize mode)
+        sessionStorage.removeItem('comingFromSubPage');
+        
+        // Trigger price recalculation
         setRefreshTrigger(prev => prev + 1);
-        
-        // CRITICAL: Force price recalculation immediately after state update
-        // Use setTimeout to ensure state has updated before recalculating
-        setTimeout(() => {
-          // Trigger price calculation by reading fresh from localStorage
-          // This ensures calculated prices match the latest selections
-          const forceRecalculate = () => {
-            // This will trigger the useEffect that calls calculatePrice
-            setRefreshTrigger(prev => prev + 1);
-          };
-          forceRecalculate();
-        }, 100);
         
         // Force change detection to run after state update
         // Compare updatedCustomization with originalItem immediately (originalItem is in closure)
@@ -905,13 +909,10 @@ export default function BuildAWigPage() {
           setHasChanges(true);
         }
         
-        // Clear loading flag after a short delay to allow state updates to propagate
+        // Clear loading flag after state update completes (like customize mode)
         // Use a longer delay to ensure React state updates have propagated and sync effect won't overwrite
-        // CRITICAL: Keep comingFromSubPage flag until AFTER loading flag is cleared, so sync effect can skip
         setTimeout(() => {
           isLoadingFromStorage.current = false;
-          // Clear the flag AFTER loading flag is cleared, so sync effect has had time to skip
-          sessionStorage.removeItem('comingFromSubPage');
           
           // CRITICAL: Trigger change detection after loading is complete in edit mode
           // This ensures hasChanges is set correctly after returning from sub-page
@@ -942,6 +943,8 @@ export default function BuildAWigPage() {
               
               console.log('[CHANGE DETECTION AFTER SUB-PAGE]', {
                 hasChangesDetected,
+                currentTexture,
+                originalTexture: originalItem.texture,
                 currentStyling,
                 originalStyling: originalItem.styling
               });
@@ -1364,6 +1367,7 @@ export default function BuildAWigPage() {
 
   // CRITICAL: Sync customization state to localStorage whenever it changes
   // This ensures sub-pages see the current selections from the main page
+  // BUT: In edit mode, DO NOT overwrite editSelected* keys that were just set by sub-pages
   useEffect(() => {
     // Skip syncing if we're currently loading from localStorage (to avoid circular updates)
     if (isLoadingFromStorage.current) {
@@ -1380,11 +1384,34 @@ export default function BuildAWigPage() {
       return;
     }
     
+    // CRITICAL: In edit mode, DO NOT sync editSelected* keys back to localStorage
+    // Sub-pages set these values, and we should NOT overwrite them
+    // Only sync selected* keys for sub-pages to read, but don't overwrite editSelected* keys
+    if (isEditMode) {
+      // Only sync selected* keys (for sub-pages), NOT editSelected* keys (set by sub-pages)
+      const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
+      const validStyling = partSelectionOptions.includes(customization.styling) ? 'NONE' : customization.styling;
+      
+      localStorage.setItem('selectedCapSize', customization.capSize);
+      localStorage.setItem('selectedLength', customization.length);
+      localStorage.setItem('selectedDensity', customization.density);
+      localStorage.setItem('selectedColor', customization.color);
+      localStorage.setItem('selectedTexture', customization.texture);
+      localStorage.setItem('selectedLace', customization.lace);
+      localStorage.setItem('selectedHairline', customization.hairline);
+      localStorage.setItem('selectedStyling', validStyling);
+      localStorage.setItem('selectedAddOns', JSON.stringify(customization.addOns));
+      
+      // DO NOT sync editSelected* keys here - they are set by sub-pages and route change effect
+      // DO NOT recalculate prices here - prices are set by sub-pages
+      return; // Exit early to prevent overwriting editSelected* keys
+    }
+    
     // CRITICAL: Ensure styling is not a part selection (MIDDLE, LEFT, RIGHT) - it should be NONE or a valid styling option
     const partSelectionOptions = ['MIDDLE', 'LEFT', 'RIGHT'];
     const validStyling = partSelectionOptions.includes(customization.styling) ? 'NONE' : customization.styling;
     
-    // Save current customization to localStorage so sub-pages can read it
+    // Save current customization to localStorage so sub-pages can read it (main mode and customize mode)
     localStorage.setItem('selectedCapSize', customization.capSize);
     localStorage.setItem('selectedLength', customization.length);
     localStorage.setItem('selectedDensity', customization.density);
@@ -1394,23 +1421,6 @@ export default function BuildAWigPage() {
     localStorage.setItem('selectedHairline', customization.hairline);
     localStorage.setItem('selectedStyling', validStyling);
     localStorage.setItem('selectedAddOns', JSON.stringify(customization.addOns));
-    
-    // Also save with 'editSelected' prefix in edit mode for CartDropdown
-    if (isEditMode) {
-      localStorage.setItem('editSelectedCapSize', customization.capSize);
-      localStorage.setItem('editSelectedLength', customization.length);
-      localStorage.setItem('editSelectedDensity', customization.density);
-      localStorage.setItem('editSelectedColor', customization.color);
-      localStorage.setItem('editSelectedTexture', customization.texture);
-      localStorage.setItem('editSelectedLace', customization.lace);
-      localStorage.setItem('editSelectedHairline', customization.hairline);
-      localStorage.setItem('editSelectedStyling', validStyling);
-      localStorage.setItem('editSelectedAddOns', JSON.stringify(customization.addOns));
-      
-      // Also sync prices when selections change in edit mode
-      const calculatedPrices = calculatePricesFromSelections(customization);
-      savePricesToLocalStorage(calculatedPrices);
-    }
     
     // Also save with 'customizeSelected' prefix in customize mode
     if (isCustomizeMode) {
@@ -1428,7 +1438,7 @@ export default function BuildAWigPage() {
       // Only sync selections, not prices. Prices are set by sub-pages when user confirms selection.
       // If prices don't exist yet, they'll be calculated when loading from sub-pages.
     }
-  }, [customization, location.pathname, calculatePricesFromSelections, savePricesToLocalStorage]);
+  }, [customization, location.pathname]);
   
   // CRITICAL: In edit mode, sync customization state FROM localStorage when customStorageChange events fire
   // This ensures thumbnails update when returning from sub-pages
@@ -1446,46 +1456,62 @@ export default function BuildAWigPage() {
           return;
         }
         
-        // Read latest selections from localStorage
-        const editSelectedTexture = localStorage.getItem('editSelectedTexture') || localStorage.getItem('selectedTexture');
-        const editSelectedColor = localStorage.getItem('editSelectedColor') || localStorage.getItem('selectedColor');
-        const editSelectedLength = localStorage.getItem('editSelectedLength') || localStorage.getItem('selectedLength');
-        const editSelectedDensity = localStorage.getItem('editSelectedDensity') || localStorage.getItem('selectedDensity');
-        const editSelectedLace = localStorage.getItem('editSelectedLace') || localStorage.getItem('selectedLace');
-        const editSelectedHairline = localStorage.getItem('editSelectedHairline') || localStorage.getItem('selectedHairline');
-        const editSelectedStyling = localStorage.getItem('editSelectedStyling') || localStorage.getItem('selectedStyling');
-        const editSelectedCapSize = localStorage.getItem('editSelectedCapSize') || localStorage.getItem('selectedCapSize');
-        const editSelectedAddOns = localStorage.getItem('editSelectedAddOns') || localStorage.getItem('selectedAddOns');
+        // CRITICAL: Read latest selections from localStorage (editSelected* keys take priority)
+        const editSelectedTexture = localStorage.getItem('editSelectedTexture');
+        const editSelectedColor = localStorage.getItem('editSelectedColor');
+        const editSelectedLength = localStorage.getItem('editSelectedLength');
+        const editSelectedDensity = localStorage.getItem('editSelectedDensity');
+        const editSelectedLace = localStorage.getItem('editSelectedLace');
+        const editSelectedHairline = localStorage.getItem('editSelectedHairline');
+        const editSelectedStyling = localStorage.getItem('editSelectedStyling');
+        const editSelectedCapSize = localStorage.getItem('editSelectedCapSize');
+        const editSelectedAddOns = localStorage.getItem('editSelectedAddOns');
+        
+        // Fallback to selected* keys if editSelected* don't exist
+        const currentTexture = editSelectedTexture || localStorage.getItem('selectedTexture');
+        const currentColor = editSelectedColor || localStorage.getItem('selectedColor');
+        const currentLength = editSelectedLength || localStorage.getItem('selectedLength');
+        const currentDensity = editSelectedDensity || localStorage.getItem('selectedDensity');
+        const currentLace = editSelectedLace || localStorage.getItem('selectedLace');
+        const currentHairline = editSelectedHairline || localStorage.getItem('selectedHairline');
+        const currentStyling = editSelectedStyling || localStorage.getItem('selectedStyling');
+        const currentCapSize = editSelectedCapSize || localStorage.getItem('selectedCapSize');
+        const currentAddOns = editSelectedAddOns || localStorage.getItem('selectedAddOns');
         
         // Check if any values differ from current state
         const needsUpdate = 
-          (editSelectedTexture && editSelectedTexture !== customization.texture) ||
-          (editSelectedColor && editSelectedColor !== customization.color) ||
-          (editSelectedLength && editSelectedLength !== customization.length) ||
-          (editSelectedDensity && editSelectedDensity !== customization.density) ||
-          (editSelectedLace && editSelectedLace !== customization.lace) ||
-          (editSelectedHairline && editSelectedHairline !== customization.hairline) ||
-          (editSelectedStyling && editSelectedStyling !== customization.styling) ||
-          (editSelectedCapSize && editSelectedCapSize !== customization.capSize) ||
-          (editSelectedAddOns && JSON.stringify(JSON.parse(editSelectedAddOns || '[]')) !== JSON.stringify(customization.addOns));
+          (currentTexture && currentTexture !== customization.texture) ||
+          (currentColor && currentColor !== customization.color) ||
+          (currentLength && currentLength !== customization.length) ||
+          (currentDensity && currentDensity !== customization.density) ||
+          (currentLace && currentLace !== customization.lace) ||
+          (currentHairline && currentHairline !== customization.hairline) ||
+          (currentStyling && currentStyling !== customization.styling) ||
+          (currentCapSize && currentCapSize !== customization.capSize) ||
+          (currentAddOns && JSON.stringify(JSON.parse(currentAddOns || '[]')) !== JSON.stringify(customization.addOns));
         
         if (needsUpdate) {
+          console.log('[SYNC FROM STORAGE] Updating customization state from localStorage:', {
+            texture: currentTexture,
+            currentState: customization.texture
+          });
+          
           // Update customization state to match localStorage
           // This ensures thumbnails update correctly
           setCustomization(prev => ({
             ...prev,
-            texture: editSelectedTexture || prev.texture,
-            color: editSelectedColor || prev.color,
-            length: editSelectedLength || prev.length,
-            density: editSelectedDensity || prev.density,
-            lace: editSelectedLace || prev.lace,
-            hairline: editSelectedHairline || prev.hairline,
-            styling: editSelectedStyling || prev.styling,
-            capSize: editSelectedCapSize || prev.capSize,
-            addOns: editSelectedAddOns ? JSON.parse(editSelectedAddOns) : prev.addOns
+            texture: currentTexture || prev.texture,
+            color: currentColor || prev.color,
+            length: currentLength || prev.length,
+            density: currentDensity || prev.density,
+            lace: currentLace || prev.lace,
+            hairline: currentHairline || prev.hairline,
+            styling: currentStyling || prev.styling,
+            capSize: currentCapSize || prev.capSize,
+            addOns: currentAddOns ? JSON.parse(currentAddOns) : prev.addOns
           }));
         }
-      }, 100);
+      }, 150);
     };
     
     // Listen for customStorageChange events
