@@ -53,6 +53,38 @@ function ColorSelection() {
     // Main mode: use selected* keys
     return localStorage.getItem('selectedColor') || 'OFF BLACK';
   });
+  
+  // CRITICAL: Reload selection when navigating to this page
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    let storedColor: string | null = null;
+    if (isOnEditRoute) {
+      storedColor = localStorage.getItem('editSelectedColor') || localStorage.getItem('selectedColor');
+      // Fallback to editingCartItem if not found
+      if (!storedColor) {
+        const editingCartItem = localStorage.getItem('editingCartItem');
+        if (editingCartItem) {
+          try {
+            const item = JSON.parse(editingCartItem);
+            storedColor = item.color || 'OFF BLACK';
+          } catch (e) {
+            storedColor = 'OFF BLACK';
+          }
+        }
+      }
+    } else if (isOnCustomizeRoute) {
+      storedColor = localStorage.getItem('customizeSelectedColor') || localStorage.getItem('selectedColor');
+    } else {
+      storedColor = localStorage.getItem('selectedColor');
+    }
+    
+    if (storedColor && storedColor !== selectedColor) {
+      setSelectedColor(storedColor);
+    }
+  }, [location.pathname]); // Reload when route changes
   const [selectedView, setSelectedView] = useState(1);
   const [showLoading, setShowLoading] = useState(true);
   
@@ -112,7 +144,7 @@ function ColorSelection() {
       window.removeEventListener('focus', handleStorageChange);
       window.removeEventListener('customStorageChange', handleCustomStorageChange);
     };
-  }, []);
+  }, [selectedColor]); // Add selectedColor to dependencies to ensure updates
 
   useEffect(() => {
     // Hide loading screen after 2 seconds

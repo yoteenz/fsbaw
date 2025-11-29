@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ThumbBox from '../../../components/ThumbBox';
 import DynamicCartIcon from '../../../components/DynamicCartIcon';
 import LoadingScreen from '../../../components/base/LoadingScreen';
@@ -15,6 +15,7 @@ interface CapSizeOption {
 
 function CapSizeSelection() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedCapSize, setSelectedCapSize] = useState(() => {
     const pathname = window.location.pathname;
     const isOnEditRoute = pathname.includes('/edit');
@@ -51,6 +52,38 @@ function CapSizeSelection() {
     // Main mode: use selected* keys
     return localStorage.getItem('selectedCapSize') || 'M';
   });
+  
+  // CRITICAL: Reload selection when navigating to this page
+  useEffect(() => {
+    const pathname = location.pathname;
+    const isOnEditRoute = pathname.includes('/edit');
+    const isOnCustomizeRoute = pathname.includes('/noir/customize');
+    
+    let storedCapSize: string | null = null;
+    if (isOnEditRoute) {
+      storedCapSize = localStorage.getItem('editSelectedCapSize') || localStorage.getItem('selectedCapSize');
+      // Fallback to editingCartItem if not found
+      if (!storedCapSize) {
+        const editingCartItem = localStorage.getItem('editingCartItem');
+        if (editingCartItem) {
+          try {
+            const item = JSON.parse(editingCartItem);
+            storedCapSize = item.capSize || 'M';
+          } catch (e) {
+            storedCapSize = 'M';
+          }
+        }
+      }
+    } else if (isOnCustomizeRoute) {
+      storedCapSize = localStorage.getItem('customizeSelectedCapSize') || localStorage.getItem('selectedCapSize');
+    } else {
+      storedCapSize = localStorage.getItem('selectedCapSize');
+    }
+    
+    if (storedCapSize && storedCapSize !== selectedCapSize) {
+      setSelectedCapSize(storedCapSize);
+    }
+  }, [location.pathname, selectedCapSize]); // Reload when route changes
   const [selectedView, setSelectedView] = useState(1); // Changed from 0 to 1 (middle image)
   const [showLoading, setShowLoading] = useState(true);
 
@@ -110,7 +143,7 @@ function CapSizeSelection() {
       window.removeEventListener('focus', handleStorageChange);
       window.removeEventListener('customStorageChange', handleCustomStorageChange);
     };
-  }, []);
+  }, [selectedCapSize]); // Add selectedCapSize to dependencies to ensure updates
 
   // Get wig views based on selected hairline from localStorage
   const getWigViews = () => {

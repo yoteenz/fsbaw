@@ -248,8 +248,16 @@ export default function BuildAWigPage() {
     };
     prices.lacePrice = lacePrices[selections.lace] || 0;
     
-    // Calculate texture price (all are 0)
-    prices.texturePrice = 0;
+    // Calculate texture price
+    // CRITICAL: Some textures have prices (KINKY, YAKI cost $40)
+    const texturePrices: { [key: string]: number } = {
+      'SILKY': 0,
+      'KINKY': 40,
+      'YAKI': 40,
+      'WAVY': 0,
+      'CURLY': 0
+    };
+    prices.texturePrice = texturePrices[selections.texture] || 0;
     
     // Calculate hairline price
     // CRITICAL: Handle NATURAL, PEAK, LAGOS, and LAGOS+PEAK combination
@@ -802,6 +810,18 @@ export default function BuildAWigPage() {
           setCustomization(updatedCustomization);
         
         setRefreshTrigger(prev => prev + 1);
+        
+        // CRITICAL: Force price recalculation immediately after state update
+        // Use setTimeout to ensure state has updated before recalculating
+        setTimeout(() => {
+          // Trigger price calculation by reading fresh from localStorage
+          // This ensures calculated prices match the latest selections
+          const forceRecalculate = () => {
+            // This will trigger the useEffect that calls calculatePrice
+            setRefreshTrigger(prev => prev + 1);
+          };
+          forceRecalculate();
+        }, 100);
         
         // Force change detection to run after state update
         // Compare updatedCustomization with originalItem immediately (originalItem is in closure)
@@ -1409,6 +1429,72 @@ export default function BuildAWigPage() {
       // If prices don't exist yet, they'll be calculated when loading from sub-pages.
     }
   }, [customization, location.pathname, calculatePricesFromSelections, savePricesToLocalStorage]);
+  
+  // CRITICAL: In edit mode, sync customization state FROM localStorage when customStorageChange events fire
+  // This ensures thumbnails update when returning from sub-pages
+  useEffect(() => {
+    const isEditPage = location.pathname === '/build-a-wig/edit';
+    
+    if (!isEditPage || isLoadingFromStorage.current) {
+      return;
+    }
+    
+    const handleSyncFromStorage = () => {
+      // Small delay to ensure localStorage is fully updated
+      setTimeout(() => {
+        if (isLoadingFromStorage.current) {
+          return;
+        }
+        
+        // Read latest selections from localStorage
+        const editSelectedTexture = localStorage.getItem('editSelectedTexture') || localStorage.getItem('selectedTexture');
+        const editSelectedColor = localStorage.getItem('editSelectedColor') || localStorage.getItem('selectedColor');
+        const editSelectedLength = localStorage.getItem('editSelectedLength') || localStorage.getItem('selectedLength');
+        const editSelectedDensity = localStorage.getItem('editSelectedDensity') || localStorage.getItem('selectedDensity');
+        const editSelectedLace = localStorage.getItem('editSelectedLace') || localStorage.getItem('selectedLace');
+        const editSelectedHairline = localStorage.getItem('editSelectedHairline') || localStorage.getItem('selectedHairline');
+        const editSelectedStyling = localStorage.getItem('editSelectedStyling') || localStorage.getItem('selectedStyling');
+        const editSelectedCapSize = localStorage.getItem('editSelectedCapSize') || localStorage.getItem('selectedCapSize');
+        const editSelectedAddOns = localStorage.getItem('editSelectedAddOns') || localStorage.getItem('selectedAddOns');
+        
+        // Check if any values differ from current state
+        const needsUpdate = 
+          (editSelectedTexture && editSelectedTexture !== customization.texture) ||
+          (editSelectedColor && editSelectedColor !== customization.color) ||
+          (editSelectedLength && editSelectedLength !== customization.length) ||
+          (editSelectedDensity && editSelectedDensity !== customization.density) ||
+          (editSelectedLace && editSelectedLace !== customization.lace) ||
+          (editSelectedHairline && editSelectedHairline !== customization.hairline) ||
+          (editSelectedStyling && editSelectedStyling !== customization.styling) ||
+          (editSelectedCapSize && editSelectedCapSize !== customization.capSize) ||
+          (editSelectedAddOns && JSON.stringify(JSON.parse(editSelectedAddOns || '[]')) !== JSON.stringify(customization.addOns));
+        
+        if (needsUpdate) {
+          // Update customization state to match localStorage
+          // This ensures thumbnails update correctly
+          setCustomization(prev => ({
+            ...prev,
+            texture: editSelectedTexture || prev.texture,
+            color: editSelectedColor || prev.color,
+            length: editSelectedLength || prev.length,
+            density: editSelectedDensity || prev.density,
+            lace: editSelectedLace || prev.lace,
+            hairline: editSelectedHairline || prev.hairline,
+            styling: editSelectedStyling || prev.styling,
+            capSize: editSelectedCapSize || prev.capSize,
+            addOns: editSelectedAddOns ? JSON.parse(editSelectedAddOns) : prev.addOns
+          }));
+        }
+      }, 100);
+    };
+    
+    // Listen for customStorageChange events
+    window.addEventListener('customStorageChange', handleSyncFromStorage);
+    
+    return () => {
+      window.removeEventListener('customStorageChange', handleSyncFromStorage);
+    };
+  }, [location.pathname, customization]);
 
   // REMOVED: Change detection logic - editing is handled by noir/edit page, not this page
   const [processingTimeText, setProcessingTimeText] = useState('EXPECT 6 - 8 WEEKS OF PROCESSING TIME FOR THIS UNIT.');
@@ -2056,8 +2142,16 @@ export default function BuildAWigPage() {
           addOns: JSON.parse(localStorage.getItem('editSelectedAddOns') || localStorage.getItem('selectedAddOns') || JSON.stringify(editingItemData?.addOns || []))
         };
         
-        // DEBUGGING: Log currentCustomization in edit mode
-        console.log('[EDIT MODE] currentCustomization built from localStorage:', currentCustomization);
+        // DEBUGGING: Log currentCustomization in edit mode with detailed localStorage values
+        console.log('[EDIT MODE] currentCustomization built from localStorage:', {
+          ...currentCustomization,
+          localStorageValues: {
+            editSelectedTexture: localStorage.getItem('editSelectedTexture'),
+            selectedTexture: localStorage.getItem('selectedTexture'),
+            editSelectedTexturePrice: localStorage.getItem('editSelectedTexturePrice'),
+            selectedTexturePrice: localStorage.getItem('selectedTexturePrice')
+          }
+        });
       }
       
       // DEBUGGING: Log edit mode price calculation
@@ -2172,23 +2266,30 @@ export default function BuildAWigPage() {
         // Update mobile debug panel with current customization (from localStorage)
         setEditModeDebugInfo({
           mode: 'EDIT',
-        prefix,
+          prefix,
           customization: currentCustomization,
           calculatedPrices,
-        prices: {
-          capSizePrice,
-          colorPrice,
-          lengthPrice,
-          densityPrice,
-          lacePrice,
-          texturePrice,
-          hairlinePrice,
-          stylingPrice,
-          addOnsPrice
-        },
+          prices: {
+            capSizePrice,
+            colorPrice,
+            lengthPrice,
+            densityPrice,
+            lacePrice,
+            texturePrice,
+            hairlinePrice,
+            stylingPrice,
+            addOnsPrice
+          },
           total,
           timestamp: new Date().toISOString()
         });
+        
+        // CRITICAL: Trigger change detection after price calculation
+        // This ensures hasChanges is updated when prices change
+        // Use a longer delay to ensure all state updates have completed
+        setTimeout(() => {
+          detectChanges();
+        }, 150);
       }
       
       setTotalPrice(total);
@@ -2219,19 +2320,28 @@ export default function BuildAWigPage() {
     calculatePrice();
     
     // Also listen for storage changes to recalculate price
+    // CRITICAL: In edit mode, we need to recalculate when localStorage changes
     const handleStorageChange = () => {
       // Use requestAnimationFrame to debounce rapid changes
       requestAnimationFrame(() => {
-      calculatePrice();
+        calculatePrice();
       });
     };
     
+    // CRITICAL: Also listen for customStorageChange to ensure price updates immediately after sub-page edits
+    const handleCustomStorageChange = () => {
+      // Small delay to ensure localStorage is fully updated
+      setTimeout(() => {
+        calculatePrice();
+      }, 50);
+    };
+    
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('customStorageChange', handleStorageChange);
+    window.addEventListener('customStorageChange', handleCustomStorageChange);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('customStorageChange', handleStorageChange);
+      window.removeEventListener('customStorageChange', handleCustomStorageChange);
     };
   }, [customization, basePrice, refreshTrigger, location, calculatePricesFromSelections, savePricesToLocalStorage]);
 
@@ -2464,17 +2574,18 @@ export default function BuildAWigPage() {
   useEffect(() => {
     const isEditPage = location.pathname === '/build-a-wig/edit';
     
-    if (!isEditPage || !originalItem) {
+    if (!isEditPage) {
       return;
     }
     
     const handleChangeDetection = () => {
+      console.log('[CUSTOM STORAGE CHANGE EVENT] Triggered');
       // Use requestAnimationFrame to ensure localStorage has been updated
       requestAnimationFrame(() => {
         // Small delay to ensure localStorage is fully updated
         setTimeout(() => {
           detectChanges();
-        }, 50);
+        }, 100);
       });
     };
     
@@ -2484,7 +2595,7 @@ export default function BuildAWigPage() {
     return () => {
       window.removeEventListener('customStorageChange', handleChangeDetection);
     };
-  }, [location.pathname, originalItem, detectChanges]);
+  }, [location.pathname, detectChanges]);
 
   // Initialize button state from localStorage on page load
   useEffect(() => {
@@ -2539,10 +2650,11 @@ export default function BuildAWigPage() {
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Check localStorage directly, not state
+    // CRITICAL: Only use edit mode logic if we're actually on the edit page
     const editingCartItem = localStorage.getItem('editingCartItem');
-      const editingCartItemId = localStorage.getItem('editingCartItemId');
+    const editingCartItemId = localStorage.getItem('editingCartItemId');
     
-    if (editingCartItem && editingCartItemId) {
+    if (isEditPage && editingCartItem && editingCartItemId) {
       // CRITICAL: Recalculate price RIGHT BEFORE saving to ensure it's always correct
       // Don't rely on totalPrice state which might be stale after many edits
       const basePrice = (customization.capSize === 'XXS/XS/S' || customization.capSize === 'S/M/L') ? 780 : 740;
