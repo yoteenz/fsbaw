@@ -719,21 +719,23 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
                               // Lace: show value followed by "LACE" in all caps, add comma if there are more items after it
                               const displayValue = `${itemData.value} LACE`;
                               text += (text ? ' ' : '') + displayValue.toUpperCase() + (isLast ? '' : ',');
-                            } else if (itemData.type === 'texture' || itemData.type === 'color') {
-                              // Texture and color get commas unless they're last
-                              const displayValue = useFullNames ? itemData.fullName : itemData.value;
-                              const displayText = typeof displayValue === 'string' ? displayValue : String(displayValue);
-                              text += (text ? ' ' : '') + displayText.toUpperCase() + (isLast ? '' : ',');
+                            } else if (itemData.type === 'texture') {
+                              // Texture: show value followed by "TEXTURE" in all caps, add comma if there are more items after it
+                              const displayValue = `${itemData.value} TEXTURE`;
+                              text += (text ? ' ' : '') + displayValue.toUpperCase() + (isLast ? '' : ',');
+                            } else if (itemData.type === 'color') {
+                              // Color: show value followed by "COLOR" in all caps, add comma if there are more items after it
+                              const displayValue = `${itemData.value} COLOR`;
+                              text += (text ? ' ' : '') + displayValue.toUpperCase() + (isLast ? '' : ',');
                             } else if (itemData.type === 'hairline') {
-                              // Special handling for lagos + peak combo
+                              // Hairline: show value followed by "HAIRLINE" in all caps
                               let displayValue;
                               const hairlineValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
                               const hairlineUpper = hairlineValue.toUpperCase();
                               if (hairlineUpper.includes('LAGOS') && hairlineUpper.includes('PEAK')) {
-                                displayValue = 'LAGOS + PEAK';
+                                displayValue = 'LAGOS + PEAK HAIRLINE';
                               } else {
-                                const tempValue = useFullNames ? itemData.fullName : hairlineValue;
-                                displayValue = typeof tempValue === 'string' ? tempValue : String(tempValue);
+                                displayValue = `${hairlineValue} HAIRLINE`;
                               }
                               text += (text ? ' ' : '') + displayValue.toUpperCase();
                               // Add line break after lagos to prevent text from getting too close to close button
