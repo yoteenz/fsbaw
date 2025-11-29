@@ -13,6 +13,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   
   console.log('CartDropdown render - isOpen:', isOpen, 'cartCount:', cartCount);
   
@@ -124,36 +125,75 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   useEffect(() => {
     const loadCartItems = () => {
       try {
-    const storedItems = localStorage.getItem('cartItems');
-        console.log('CartDropdown - Loading cart items from localStorage:', storedItems);
-    if (storedItems) {
+        const isEditMode = localStorage.getItem('editingCartItem') !== null;
+        console.log('[CART DROPDOWN] loadCartItems called', {
+          timestamp: new Date().toISOString(),
+          isEditMode,
+          editingCartItem: localStorage.getItem('editingCartItem') ? 'exists' : 'null',
+          refreshTrigger
+        });
+
+        const storedItems = localStorage.getItem('cartItems');
+        console.log('[CART DROPDOWN] Loading cart items from localStorage:', storedItems);
+        
+        if (storedItems) {
           const items = JSON.parse(storedItems);
-          console.log('CartDropdown - Parsed cart items:', items);
+          console.log('[CART DROPDOWN] Parsed cart items:', items);
           
           // CRITICAL: Use the SAVED PRICE from each item, don't recalculate
           // Each item already has its correct price saved when it was added to cart
           // Recalculating would use current localStorage values, causing all items to show the same price
-          const itemsWithCorrectPrices = items.map((item: any) => {
+          const itemsWithCorrectPrices = items.map((item: any, index: number) => {
             if (item.name === 'NOIR') {
-              // Use the price that was saved when the item was added to cart
-              // This ensures each item shows its own unique price based on its selections
-              console.log('CartDropdown - Using saved price for item:', {
+              const originalPrice = item.price;
+              const finalPrice = item.price || 740; // Fallback to base price if missing
+              
+              // Log price comparison if price seems wrong
+              if (isEditMode && index === 0) {
+                const calculatedPrice = calculateActualPrice();
+                console.log('[CART DROPDOWN] Price comparison for first item:', {
+                  itemId: item.id,
+                  originalStoredPrice: originalPrice,
+                  finalPriceUsed: finalPrice,
+                  calculatedPriceFromLocalStorage: calculatedPrice,
+                  priceDifference: finalPrice - calculatedPrice,
+                  isEditMode,
+                  warning: originalPrice !== calculatedPrice ? 'PRICE MISMATCH DETECTED!' : 'Prices match'
+                });
+              }
+              
+              console.log('[CART DROPDOWN] Using saved price for item:', {
                 itemId: item.id,
                 capSize: item.capSize,
                 color: item.color,
-                storedPrice: item.price
+                storedPrice: originalPrice,
+                finalPrice: finalPrice
               });
               
-              return { ...item, price: item.price || 740 }; // Fallback to base price if missing
+              return { ...item, price: finalPrice };
             }
             return item;
           });
           
-          console.log('CartDropdown - Loading cart items with saved prices:', itemsWithCorrectPrices);
+          console.log('[CART DROPDOWN] Loading cart items with saved prices:', itemsWithCorrectPrices);
+          
+          // Check if prices changed
+          const pricesChanged = items.some((item: any, index: number) => {
+            return item.price !== itemsWithCorrectPrices[index].price;
+          });
+          
+          if (pricesChanged) {
+            console.warn('[CART DROPDOWN] ⚠️ PRICE CHANGES DETECTED!', {
+              originalItems: items.map((i: any) => ({ id: i.id, price: i.price })),
+              updatedItems: itemsWithCorrectPrices.map((i: any) => ({ id: i.id, price: i.price }))
+            });
+          }
+          
           setCartItems(itemsWithCorrectPrices);
         } else {
           // Generate mock cart items based on cart count
           const actualPrice = calculateActualPrice();
+          console.log('[CART DROPDOWN] No stored items, generating mock items with calculated price:', actualPrice);
           const mockItems: CartItem[] = [];
           for (let i = 0; i < cartCount; i++) {
             mockItems.push({
@@ -175,7 +215,7 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
           setCartItems(mockItems);
         }
       } catch (error) {
-        console.error('Error loading cart items:', error);
+        console.error('[CART DROPDOWN] Error loading cart items:', error);
         setCartItems([]);
       }
     };
@@ -185,13 +225,40 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
     // Listen for cart updates
     const handleCartUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
-      console.log('CartDropdown - Received cartUpdated event:', customEvent.detail);
+      console.log('[CART DROPDOWN] Received cartUpdated event:', customEvent.detail);
       loadCartItems();
       setRefreshTrigger(prev => prev + 1); // Force re-render
     };
     
+    // Listen for localStorage changes that might affect prices
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key && (
+        e.key.includes('Price') || 
+        e.key === 'editingCartItem' || 
+        e.key === 'editingCartItemId' ||
+        e.key === 'cartItems'
+      )) {
+        console.log('[CART DROPDOWN] Storage change detected:', {
+          key: e.key,
+          oldValue: e.oldValue,
+          newValue: e.newValue,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Reload cart items if cartItems changed
+        if (e.key === 'cartItems') {
+          loadCartItems();
+        }
+      }
+    };
+    
     window.addEventListener('cartUpdated', handleCartUpdate);
-    return () => window.removeEventListener('cartUpdated', handleCartUpdate);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [cartCount, refreshTrigger]); // Reload when cart count changes or refresh triggered
 
   // Load selected currency from localStorage
@@ -447,6 +514,102 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
     return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
+  // Debug function to get all price-related localStorage data
+  const getDebugInfo = () => {
+    const isEditMode = localStorage.getItem('editingCartItem') !== null;
+    const editingCartItem = localStorage.getItem('editingCartItem');
+    const editingCartItemId = localStorage.getItem('editingCartItemId');
+    
+    const prefix = isEditMode ? 'editSelected' : 'selected';
+    
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      isEditMode,
+      editingCartItem: editingCartItem ? JSON.parse(editingCartItem) : null,
+      editingCartItemId,
+      currentPrefix: prefix,
+      localStoragePrices: {
+        basePrice: (() => {
+          const capSize = localStorage.getItem(`${prefix}CapSize`) || 'M';
+          return (capSize === 'XXS/XS/S' || capSize === 'S/M/L') ? 780 : 740;
+        })(),
+        capSizePrice: parseInt(localStorage.getItem(`${prefix}CapSizePrice`) || '0'),
+        lengthPrice: parseInt(localStorage.getItem(`${prefix}LengthPrice`) || '0'),
+        densityPrice: parseInt(localStorage.getItem(`${prefix}DensityPrice`) || '0'),
+        colorPrice: parseInt(localStorage.getItem(`${prefix}ColorPrice`) || '0'),
+        texturePrice: parseInt(localStorage.getItem(`${prefix}TexturePrice`) || '0'),
+        lacePrice: parseInt(localStorage.getItem(`${prefix}LacePrice`) || '0'),
+        hairlinePrice: parseInt(localStorage.getItem(`${prefix}HairlinePrice`) || '0'),
+        stylingPrice: parseInt(localStorage.getItem(`${prefix}StylingPrice`) || '0'),
+        addOnsPrice: parseInt(localStorage.getItem(`${prefix}AddOnsPrice`) || '0'),
+      },
+      calculatedPrice: calculateActualPrice(),
+      cartItems: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        capSize: item.capSize,
+        length: item.length,
+        density: item.density,
+        color: item.color,
+        texture: item.texture,
+        lace: item.lace,
+        hairline: item.hairline,
+        styling: item.styling,
+        addOns: item.addOns,
+      })),
+      localStorageSelections: {
+        selected: {
+          capSize: localStorage.getItem('selectedCapSize'),
+          length: localStorage.getItem('selectedLength'),
+          density: localStorage.getItem('selectedDensity'),
+          color: localStorage.getItem('selectedColor'),
+          texture: localStorage.getItem('selectedTexture'),
+          lace: localStorage.getItem('selectedLace'),
+          hairline: localStorage.getItem('selectedHairline'),
+          styling: localStorage.getItem('selectedStyling'),
+        },
+        editSelected: {
+          capSize: localStorage.getItem('editSelectedCapSize'),
+          length: localStorage.getItem('editSelectedLength'),
+          density: localStorage.getItem('editSelectedDensity'),
+          color: localStorage.getItem('editSelectedColor'),
+          texture: localStorage.getItem('editSelectedTexture'),
+          lace: localStorage.getItem('editSelectedLace'),
+          hairline: localStorage.getItem('editSelectedHairline'),
+          styling: localStorage.getItem('editSelectedStyling'),
+        },
+      },
+      localStoragePriceKeys: {
+        selected: {
+          capSizePrice: localStorage.getItem('selectedCapSizePrice'),
+          lengthPrice: localStorage.getItem('selectedLengthPrice'),
+          densityPrice: localStorage.getItem('selectedDensityPrice'),
+          colorPrice: localStorage.getItem('selectedColorPrice'),
+          texturePrice: localStorage.getItem('selectedTexturePrice'),
+          lacePrice: localStorage.getItem('selectedLacePrice'),
+          hairlinePrice: localStorage.getItem('selectedHairlinePrice'),
+          stylingPrice: localStorage.getItem('selectedStylingPrice'),
+          addOnsPrice: localStorage.getItem('selectedAddOnsPrice'),
+        },
+        editSelected: {
+          capSizePrice: localStorage.getItem('editSelectedCapSizePrice'),
+          lengthPrice: localStorage.getItem('editSelectedLengthPrice'),
+          densityPrice: localStorage.getItem('editSelectedDensityPrice'),
+          colorPrice: localStorage.getItem('editSelectedColorPrice'),
+          texturePrice: localStorage.getItem('editSelectedTexturePrice'),
+          lacePrice: localStorage.getItem('editSelectedLacePrice'),
+          hairlinePrice: localStorage.getItem('editSelectedHairlinePrice'),
+          stylingPrice: localStorage.getItem('editSelectedStylingPrice'),
+          addOnsPrice: localStorage.getItem('editSelectedAddOnsPrice'),
+        },
+      },
+    };
+    
+    return debugInfo;
+  };
+
 
   const handleCheckout = () => {
     onClose();
@@ -511,16 +674,64 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
             >
               SHOPPING BAG
             </h3>
-            <span
-              style={{ 
-                color: '#EB1C24', 
-                fontSize: '10px',
-                fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif'
+            <div className="flex items-center space-x-2">
+              <span
+                style={{ 
+                  color: '#EB1C24', 
+                  fontSize: '10px',
+                  fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif'
+                }}
+              >
+                CURRENCY &gt; {selectedCurrency}
+              </span>
+              <button
+                onClick={() => setShowDebugPanel(!showDebugPanel)}
+                style={{ 
+                  fontSize: '8px',
+                  fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  border: '1px solid #EB1C24',
+                  background: showDebugPanel ? '#EB1C24' : 'transparent',
+                  color: showDebugPanel ? 'white' : '#EB1C24'
+                }}
+              >
+                DEBUG
+              </button>
+            </div>
+        </div>
+
+        {/* Debug Panel */}
+        {showDebugPanel && (
+          <div 
+            className="px-3 py-2 border-b border-gray-200 bg-yellow-50"
+            style={{ maxHeight: '400px', overflowY: 'auto', fontSize: '8px', fontFamily: 'monospace' }}
+          >
+            <div className="font-bold mb-2" style={{ fontSize: '9px' }}>DEBUG INFO</div>
+            <pre style={{ fontSize: '7px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              {JSON.stringify(getDebugInfo(), null, 2)}
+            </pre>
+            <button
+              onClick={() => {
+                const debugInfo = getDebugInfo();
+                console.log('CartDropdown Debug Info:', debugInfo);
+                navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2));
+                alert('Debug info copied to clipboard and console!');
+              }}
+              style={{
+                marginTop: '8px',
+                padding: '4px 8px',
+                fontSize: '8px',
+                background: '#EB1C24',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer'
               }}
             >
-              CURRENCY &gt; {selectedCurrency}
-            </span>
-        </div>
+              COPY TO CLIPBOARD
+            </button>
+          </div>
+        )}
 
         {/* Cart Items */}
           <div className="px-3 py-2">
