@@ -296,9 +296,9 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
     return 0;
   };
 
-  // Helper function to get color price based on color name
+  // Helper function to get color price based on color name and length
   // @ts-expect-error - Function kept for potential future use
-  const _getColorPrice = (color: string) => {
+  const _getColorPrice = (color: string, length?: string) => {
     const colorPrices: { [key: string]: number } = {
       'JET BLACK': 100,  // Fixed: JET BLACK should be $100, not $0
       'OFF BLACK': 0,    // Only OFF BLACK is free
@@ -317,7 +317,15 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
       'SLIME': 100,
       'CITRINE': 100
     };
-    return colorPrices[color] || 0;
+    
+    let basePrice = colorPrices[color] || 0;
+    
+    // Add extra $40 for lengths 30" and above (excluding OFF BLACK)
+    if (basePrice > 0 && length && ['30"', '32"', '34"', '36"', '40"'].includes(length)) {
+      basePrice += 40;
+    }
+    
+    return basePrice;
   };
 
   // Helper function to get length price based on length
@@ -401,8 +409,8 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
   const _getTexturePrice = (texture: string) => {
     const texturePrices: { [key: string]: number } = {
       'SILKY': 0,
-      'KINKY': 0,
-      'YAKI': 0
+      'KINKY': 40,
+      'YAKI': 40
     };
     return texturePrices[texture] || 0;
   };
@@ -990,49 +998,77 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
                           const customizableItems = items.filter(item => item.type !== 'density' && item.type !== 'lace');
                           const useFullNames = customizableItems.length === 1;
                           
-                          // Build text with proper comma placement
-                          items.forEach((itemData, index) => {
-                            const isLast = index === items.length - 1;
+                          // Helper function to format price with red color
+                          const formatPriceDisplay = (price: number): string => {
+                            if (price === 0) return '';
+                            const sign = price > 0 ? '+' : '';
+                            return ` (<span style="color: #EB1C24;">${sign}$${Math.abs(price)}</span>)`;
+                          };
+                          
+                          // Build text with each item on its own line and prices in red
+                          items.forEach((itemData) => {
+                            // Add line break before each item except the first
+                            if (text) {
+                              text += '<br/>';
+                            }
+                            
+                            // Add hyphen before each line
+                            text += '-';
                             
                             if (itemData.type === 'density') {
-                              // Density: show percentage value followed by "DENSITY" in all caps, add comma if there are more items after it
-                              const displayValue = `${itemData.value} DENSITY`;
-                              text += (text ? ' ' : '') + displayValue.toUpperCase() + (isLast ? '' : ',');
+                              // Density: show percentage value followed by "DENSITY" in all caps with price
+                              const densityValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
+                              const price = _getDensityPrice(densityValue);
+                              const priceDisplay = formatPriceDisplay(price);
+                              const displayValue = `${densityValue} DENSITY${priceDisplay}`;
+                              text += displayValue.toUpperCase();
                             } else if (itemData.type === 'lace') {
-                              // Lace: show value followed by "LACE" in all caps, add comma if there are more items after it
-                              const displayValue = `${itemData.value} LACE`;
-                              text += (text ? ' ' : '') + displayValue.toUpperCase() + (isLast ? '' : ',');
+                              // Lace: show value followed by "LACE" in all caps with price
+                              const laceValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
+                              const price = _getLacePrice(laceValue);
+                              const priceDisplay = formatPriceDisplay(price);
+                              const displayValue = `${laceValue} LACE${priceDisplay}`;
+                              text += displayValue.toUpperCase();
                             } else if (itemData.type === 'texture') {
-                              // Texture: show value followed by "TEXTURE" in all caps, add comma if there are more items after it
-                              const displayValue = `${itemData.value} TEXTURE`;
-                              text += (text ? ' ' : '') + displayValue.toUpperCase() + (isLast ? '' : ',');
+                              // Texture: show value followed by "TEXTURE" in all caps with price
+                              const textureValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
+                              const price = _getTexturePrice(textureValue);
+                              const priceDisplay = formatPriceDisplay(price);
+                              const displayValue = `${textureValue} TEXTURE${priceDisplay}`;
+                              text += displayValue.toUpperCase();
                             } else if (itemData.type === 'color') {
-                              // Color: show value followed by "COLOR" in all caps, add comma if there are more items after it
-                              const displayValue = `${itemData.value} COLOR`;
-                              text += (text ? ' ' : '') + displayValue.toUpperCase() + (isLast ? '' : ',');
+                              // Color: show value followed by "COLOR" in all caps with price
+                              // CRITICAL: Include length to calculate correct price (30"+ adds $40)
+                              const colorValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
+                              const itemLength = item.length || '24"';
+                              const price = _getColorPrice(colorValue, itemLength);
+                              const priceDisplay = formatPriceDisplay(price);
+                              const displayValue = `${colorValue} COLOR${priceDisplay}`;
+                              text += displayValue.toUpperCase();
                             } else if (itemData.type === 'hairline') {
-                              // Hairline: show value followed by "HAIRLINE" in all caps
+                              // Hairline: show value followed by "HAIRLINE" in all caps with price
                               let displayValue;
                               const hairlineValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
                               const hairlineUpper = hairlineValue.toUpperCase();
+                              const price = _getHairlinePrice(hairlineValue);
+                              const priceDisplay = formatPriceDisplay(price);
+                              
                               if (hairlineUpper.includes('LAGOS') && hairlineUpper.includes('PEAK')) {
-                                displayValue = 'LAGOS + PEAK HAIRLINE';
+                                displayValue = `LAGOS + PEAK HAIRLINE${priceDisplay}`;
                               } else {
-                                displayValue = `${hairlineValue} HAIRLINE`;
+                                displayValue = `${hairlineValue} HAIRLINE${priceDisplay}`;
                               }
-                              text += (text ? ' ' : '') + displayValue.toUpperCase();
-                              // Add line break after lagos to prevent text from getting too close to close button
-                              if (hairlineValue.includes('LAGOS')) {
-                                text += '<br/>';
-                              } else {
-                                text += (isLast ? '' : ',');
-                              }
+                              text += displayValue.toUpperCase();
                             } else if (itemData.type === 'styling') {
+                              const stylingValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
+                              const price = _getStylingPrice(stylingValue);
+                              const priceDisplay = formatPriceDisplay(price);
+                              
                               if (useFullNames) {
-                                // For single item, show full styling name
+                                // For single item, show full styling name with price
                                 const displayValue = itemData.fullName;
                                 const displayText = typeof displayValue === 'string' ? displayValue : String(displayValue);
-                                text += (text ? ' ' : '') + displayText.toUpperCase();
+                                text += displayText.toUpperCase() + priceDisplay;
                               } else {
                                 // For multiple items, show abbreviated with part selection
                             let partAbbrev = '';
@@ -1048,32 +1084,40 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
                                 partAbbrev = '(M)';
                                 break;
                             }
-                                text += (text ? ' ' : '') + partAbbrev;
+                                text += partAbbrev;
                             
                             // Use non-breaking spaces within styling section and connect to part selection
                             if (typeof itemData.value === 'string') {
                               const stylingText = itemData.value.toUpperCase().replace(/ /g, '\u00A0');
-                              text += '\u00A0' + stylingText + (isLast ? '' : ',');
+                              text += '\u00A0' + stylingText + priceDisplay;
                             }
                               }
                             } else if (itemData.type === 'addOns') {
+                              const addOnsArray = Array.isArray(itemData.value) ? itemData.value : [];
+                              const totalAddOnPrice = _getAddOnsPrice(addOnsArray);
+                              const priceDisplay = formatPriceDisplay(totalAddOnPrice);
+                              
                               if (useFullNames) {
-                                // For single item, show full add-on names
+                                // For single item, show full add-on names with price
                                 const addOnText = Array.isArray(itemData.value) ? itemData.value.join(', ') : String(itemData.value);
-                                text += (text ? ' ' : '') + addOnText.toUpperCase();
+                                text += addOnText.toUpperCase() + priceDisplay;
                               } else {
-                                // For multiple items, show abbreviated add-ons
+                                // For multiple items, show abbreviated add-ons with price
                                 if (Array.isArray(itemData.value)) {
                                   itemData.value.forEach((addOn: string, addOnIndex: number) => {
                                     // Use non-breaking spaces within add-on section
+                                    const addOnPrice = _getAddOnsPrice([addOn]);
+                                    const addOnPriceDisplay = formatPriceDisplay(addOnPrice);
                                     const addOnText = addOn.toUpperCase().replace(/ /g, '\u00A0');
-                                    const isLastAddOn = addOnIndex === itemData.value.length - 1;
-                                    text += (text ? ' ' : '') + addOnText + (isLastAddOn ? '' : ',');
+                                    if (addOnIndex > 0) {
+                                      text += '<br/>-';
+                                    }
+                                    text += addOnText + addOnPriceDisplay;
                                   });
                                 } else {
                                   // Handle single string case
                                   const addOnText = String(itemData.value).toUpperCase().replace(/ /g, '\u00A0');
-                                  text += (text ? ' ' : '') + addOnText;
+                                  text += addOnText + priceDisplay;
                                 }
                               }
                             }
