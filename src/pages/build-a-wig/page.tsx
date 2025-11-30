@@ -833,8 +833,12 @@ export default function BuildAWigPage() {
         console.log('[EDIT MODE ROUTE CHANGE] Updating customization state:', updatedCustomization);
         setCustomization(updatedCustomization);
         
-        // Clear the flag immediately (like customize mode)
-        sessionStorage.removeItem('comingFromSubPage');
+        // CRITICAL: Delay clearing the flag to give other effects time to check it
+        // This prevents race conditions where other effects overwrite the sub-page selections
+        setTimeout(() => {
+          sessionStorage.removeItem('comingFromSubPage');
+          console.log('[EDIT MODE ROUTE CHANGE] Cleared comingFromSubPage flag after delay');
+        }, 500);
         
         // Trigger price recalculation
         setRefreshTrigger(prev => prev + 1);
@@ -2383,6 +2387,12 @@ export default function BuildAWigPage() {
           return; // Exit early to avoid overwriting prices saved by sub-pages
         }
         
+        // Also skip if we're currently loading from storage (route change effect is handling it)
+        if (isLoadingFromStorage.current) {
+          console.log('[EDIT MODE CALCULATE PRICE] Skipping price save - isLoadingFromStorage is true');
+          return;
+        }
+        
         const pricesToSave = {
           capSizePrice,
           colorPrice,
@@ -3270,6 +3280,7 @@ export default function BuildAWigPage() {
                     NOIR
                   </p>
                   <img
+                    key={`hero-${customization.hairline}-${customization.color}-${customization.texture}-${customization.length}-${selectedView}`}
                     src={wigViews[selectedView]}
                     alt="Selected Wig"
                     width="282"
@@ -3310,6 +3321,7 @@ export default function BuildAWigPage() {
                         }}
                       >
                         <img
+                          key={`thumb-${index}-${customization.hairline}-${customization.color}-${customization.texture}-${customization.length}`}
                           alt={`Thumbnail ${index + 1}`}
                           width="63"
                           height="84"
