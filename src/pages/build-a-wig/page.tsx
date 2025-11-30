@@ -682,8 +682,8 @@ export default function BuildAWigPage() {
       const isDifferentItem = editingCartItemId && editingCartItemId !== currentEditingItemIdRef.current;
       
       // If coming from sub-page, load updated values from localStorage
-      // CRITICAL: Check if we're in edit mode AND either the item ID matches OR we don't have a current item ID yet
-      if (comingFromSubPage && editingCartItemId && (editingCartItemId === currentEditingItemIdRef.current || !currentEditingItemIdRef.current)) {
+      // CRITICAL: Match customize mode logic - just check comingFromSubPage flag, no other conditions
+      if (comingFromSubPage) {
         
         // Set flag to prevent sync effect from overwriting
         isLoadingFromStorage.current = true;
@@ -1468,59 +1468,81 @@ export default function BuildAWigPage() {
         const editSelectedAddOns = localStorage.getItem('editSelectedAddOns');
         
         // Fallback to selected* keys if editSelected* don't exist
-        const currentTexture = editSelectedTexture || localStorage.getItem('selectedTexture');
-        const currentColor = editSelectedColor || localStorage.getItem('selectedColor');
-        const currentLength = editSelectedLength || localStorage.getItem('selectedLength');
-        const currentDensity = editSelectedDensity || localStorage.getItem('selectedDensity');
-        const currentLace = editSelectedLace || localStorage.getItem('selectedLace');
-        const currentHairline = editSelectedHairline || localStorage.getItem('selectedHairline');
-        const currentStyling = editSelectedStyling || localStorage.getItem('selectedStyling');
-        const currentCapSize = editSelectedCapSize || localStorage.getItem('selectedCapSize');
-        const currentAddOns = editSelectedAddOns || localStorage.getItem('selectedAddOns');
+        const currentTexture = editSelectedTexture || localStorage.getItem('selectedTexture') || 'SILKY';
+        const currentColor = editSelectedColor || localStorage.getItem('selectedColor') || 'OFF BLACK';
+        const currentLength = editSelectedLength || localStorage.getItem('selectedLength') || '24"';
+        const currentDensity = editSelectedDensity || localStorage.getItem('selectedDensity') || '200%';
+        const currentLace = editSelectedLace || localStorage.getItem('selectedLace') || '13X6';
+        const currentHairline = editSelectedHairline || localStorage.getItem('selectedHairline') || 'NATURAL';
+        const currentStyling = editSelectedStyling || localStorage.getItem('selectedStyling') || 'NONE';
+        const currentCapSize = editSelectedCapSize || localStorage.getItem('selectedCapSize') || 'M';
+        const currentAddOns = editSelectedAddOns || localStorage.getItem('selectedAddOns') || '[]';
         
-        // Check if any values differ from current state
-        const needsUpdate = 
-          (currentTexture && currentTexture !== customization.texture) ||
-          (currentColor && currentColor !== customization.color) ||
-          (currentLength && currentLength !== customization.length) ||
-          (currentDensity && currentDensity !== customization.density) ||
-          (currentLace && currentLace !== customization.lace) ||
-          (currentHairline && currentHairline !== customization.hairline) ||
-          (currentStyling && currentStyling !== customization.styling) ||
-          (currentCapSize && currentCapSize !== customization.capSize) ||
-          (currentAddOns && JSON.stringify(JSON.parse(currentAddOns || '[]')) !== JSON.stringify(customization.addOns));
-        
-        if (needsUpdate) {
-          console.log('[SYNC FROM STORAGE] Updating customization state from localStorage:', {
-            texture: currentTexture,
-            currentState: customization.texture
-          });
+        // Always update state from localStorage (use functional update to avoid dependency issues)
+        setCustomization(prev => {
+          // Parse addOns once
+          let parsedAddOns: string[] = [];
+          try {
+            parsedAddOns = currentAddOns ? JSON.parse(currentAddOns) : [];
+          } catch (e) {
+            parsedAddOns = [];
+          }
           
-          // Update customization state to match localStorage
-          // This ensures thumbnails update correctly
-          setCustomization(prev => ({
-            ...prev,
-            texture: currentTexture || prev.texture,
-            color: currentColor || prev.color,
-            length: currentLength || prev.length,
-            density: currentDensity || prev.density,
-            lace: currentLace || prev.lace,
-            hairline: currentHairline || prev.hairline,
-            styling: currentStyling || prev.styling,
-            capSize: currentCapSize || prev.capSize,
-            addOns: currentAddOns ? JSON.parse(currentAddOns) : prev.addOns
-          }));
-        }
+          // Check if any values differ from current state
+          const needsUpdate = 
+            currentTexture !== prev.texture ||
+            currentColor !== prev.color ||
+            currentLength !== prev.length ||
+            currentDensity !== prev.density ||
+            currentLace !== prev.lace ||
+            currentHairline !== prev.hairline ||
+            currentStyling !== prev.styling ||
+            currentCapSize !== prev.capSize ||
+            JSON.stringify(parsedAddOns) !== JSON.stringify(prev.addOns);
+          
+          if (needsUpdate) {
+            console.log('[SYNC FROM STORAGE] Updating customization state from localStorage:', {
+              texture: { from: prev.texture, to: currentTexture },
+              color: { from: prev.color, to: currentColor },
+              length: { from: prev.length, to: currentLength },
+              density: { from: prev.density, to: currentDensity },
+              lace: { from: prev.lace, to: currentLace },
+              hairline: { from: prev.hairline, to: currentHairline },
+              styling: { from: prev.styling, to: currentStyling },
+              capSize: { from: prev.capSize, to: currentCapSize }
+            });
+            
+            // Update customization state to match localStorage
+            // This ensures thumbnails update correctly
+            return {
+              ...prev,
+              texture: currentTexture,
+              color: currentColor,
+              length: currentLength,
+              density: currentDensity,
+              lace: currentLace,
+              hairline: currentHairline,
+              styling: currentStyling,
+              capSize: currentCapSize,
+              addOns: parsedAddOns
+            };
+          }
+          
+          return prev;
+        });
       }, 150);
     };
     
     // Listen for customStorageChange events
     window.addEventListener('customStorageChange', handleSyncFromStorage);
     
+    // Also trigger sync when component mounts/route changes (in case we missed an event)
+    handleSyncFromStorage();
+    
     return () => {
       window.removeEventListener('customStorageChange', handleSyncFromStorage);
     };
-  }, [location.pathname, customization]);
+  }, [location.pathname]); // Removed customization from dependencies to prevent listener re-registration
 
   // REMOVED: Change detection logic - editing is handled by noir/edit page, not this page
   const [processingTimeText, setProcessingTimeText] = useState('EXPECT 6 - 8 WEEKS OF PROCESSING TIME FOR THIS UNIT.');
