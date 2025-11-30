@@ -133,10 +133,10 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
           refreshTrigger
         });
 
-        const storedItems = localStorage.getItem('cartItems');
+    const storedItems = localStorage.getItem('cartItems');
         console.log('[CART DROPDOWN] Loading cart items from localStorage:', storedItems);
         
-        if (storedItems) {
+    if (storedItems) {
           const items = JSON.parse(storedItems);
           console.log('[CART DROPDOWN] Parsed cart items:', items);
           
@@ -674,25 +674,25 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
         {/* Header */}
           <div className="px-3 py-2 border-b border-gray-100" style={{ marginTop: '6px', paddingBottom: '9px' }}>
             <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: '8px' }}>
-              <h3 
-                className="font-bold text-black uppercase" 
-                style={{ 
-                  fontSize: '10px',
-                  fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif'
-                }}
-              >
-                SHOPPING BAG
-              </h3>
+            <h3 
+              className="font-bold text-black uppercase" 
+              style={{ 
+                fontSize: '10px',
+                fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif'
+              }}
+            >
+              SHOPPING BAG
+            </h3>
               <div className="flex items-center" style={{ gap: '6px', flexWrap: 'wrap' }}>
-                <span
-                  style={{ 
-                    color: '#EB1C24', 
-                    fontSize: '10px',
-                    fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif'
-                  }}
-                >
-                  CURRENCY &gt; {selectedCurrency}
-                </span>
+            <span
+              style={{ 
+                color: '#EB1C24', 
+                fontSize: '10px',
+                fontFamily: '"Futura PT Medium", futuristic-pt, Futura, Inter, sans-serif'
+              }}
+            >
+              CURRENCY &gt; {selectedCurrency}
+            </span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -978,6 +978,14 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
                           
                           // Build array of items to determine what comes after each
                           const items = [];
+                          // Add cap size if it's a flexible cap (XXS/XS/S or S/M/L)
+                          if (item.capSize && (item.capSize === 'XXS/XS/S' || item.capSize === 'S/M/L')) {
+                            items.push({ type: 'capSize', value: item.capSize, fullName: 'FLEX CAP' });
+                          }
+                          // Add length if it's not the default 24"
+                          if (item.length && item.length !== '24"') {
+                            items.push({ type: 'length', value: item.length, fullName: item.length });
+                          }
                           if (item.density && item.density !== '200%') items.push({ type: 'density', value: item.density, fullName: `${item.density} density` });
                           if (item.lace && item.lace !== '13X6') items.push({ type: 'lace', value: item.lace, fullName: `${item.lace} lace` });
                           if (item.texture && item.texture !== 'SILKY') items.push({ type: 'texture', value: item.texture, fullName: item.texture });
@@ -1015,7 +1023,44 @@ export default function CartDropdown({ isOpen, onClose, cartCount }: CartDropdow
                             // Add hyphen before each line
                             text += '-';
                             
-                            if (itemData.type === 'density') {
+                            if (itemData.type === 'capSize') {
+                              // Cap Size: show "FLEX CAP" with price (+$40)
+                              const price = 40; // Flexible caps cost $40 extra
+                              const priceDisplay = formatPriceDisplay(price);
+                              text += `FLEX CAP${priceDisplay}`;
+                            } else if (itemData.type === 'length') {
+                              // Length: show difference from 24" base with ADDED/REMOVED and price
+                              const lengthValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
+                              const lengthNum = parseInt(lengthValue.replace('"', ''));
+                              const baseLength = 24;
+                              const difference = lengthNum - baseLength;
+                              
+                              // Get length price from item or calculate it
+                              const lengthPrices: { [key: string]: number } = {
+                                '16"': -50,
+                                '18"': -25,
+                                '20"': -10,
+                                '22"': -5,
+                                '24"': 0,
+                                '26"': 50,
+                                '28"': 100,
+                                '30"': 150,
+                                '32"': 200,
+                                '34"': 250,
+                                '36"': 300,
+                                '40"': 400
+                              };
+                              const price = lengthPrices[lengthValue] || 0;
+                              const priceDisplay = formatPriceDisplay(price);
+                              
+                              if (difference > 0) {
+                                // Longer than base: "-X" ADDED (+$Y)"
+                                text += `${Math.abs(difference)}" ADDED${priceDisplay}`;
+                              } else if (difference < 0) {
+                                // Shorter than base: "-X" REMOVED (-$Y)"
+                                text += `${Math.abs(difference)}" REMOVED${priceDisplay}`;
+                              }
+                            } else if (itemData.type === 'density') {
                               // Density: show percentage value followed by "DENSITY" in all caps with price
                               const densityValue = typeof itemData.value === 'string' ? itemData.value : String(itemData.value);
                               const price = _getDensityPrice(densityValue);
